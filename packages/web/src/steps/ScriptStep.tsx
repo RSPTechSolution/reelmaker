@@ -1,8 +1,17 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { splitWords, totalWords, type Line, type Reel } from '@reelmaker/shared';
+import { Mood, splitWords, totalWords, type Line, type Reel } from '@reelmaker/shared';
 import { ApiError } from '../api.ts';
 
 const WORDS_PER_SEC = 2.3;
+// What each mood does, in the owner's terms (pace + pause + mascot face come from it).
+const MOOD_HINT: Record<Mood, string> = {
+  excited: 'Excited: faster, big grin',
+  curious: 'Curious: a touch slower, thinking face',
+  serious: 'Serious: slower, longer pause after',
+  funny: 'Funny: quick, laughing face',
+  calm: 'Calm: slow and easy',
+  shocked: 'Shocked: pause after, shocked face',
+};
 
 function nextId(lines: Line[]): string {
   const max = lines.reduce((m, l) => Math.max(m, Number(/^l(\d+)$/.exec(l.id)?.[1] ?? 0)), 0);
@@ -34,6 +43,14 @@ export function ScriptStep({
   const words = totalWords(lines);
 
   const update = (i: number, patch: Partial<Line>) => setLines(lines.map((l, k) => (k === i ? { ...l, ...patch } : l)));
+  const setMood = (i: number, value: string) =>
+    setLines(
+      lines.map((l, k) => {
+        if (k !== i) return l;
+        const { mood: _old, ...rest } = l;
+        return value ? { ...rest, mood: value as Mood } : rest;
+      }),
+    );
   const move = (i: number, by: number) => {
     const next = [...lines];
     [next[i], next[i + by]] = [next[i + by], next[i]];
@@ -96,9 +113,25 @@ export function ScriptStep({
                 onChange={(e) => update(i, { caption: e.target.value })}
               />
               <div className="row-span-2 flex flex-col items-end justify-between gap-1">
-                <span className={`text-xs ${bad ? 'font-semibold text-sindoor' : 'text-ink-soft'}`}>
-                  {bad ? `${c} words vs ${s}` : `${c} words`}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs ${bad ? 'font-semibold text-sindoor' : 'text-ink-soft'}`}>
+                    {bad ? `${c} words vs ${s}` : `${c} words`}
+                  </span>
+                  <select
+                    aria-label={`Line ${n} mood`}
+                    title={l.mood ? MOOD_HINT[l.mood] : 'No mood: normal pace'}
+                    className="rounded border border-ink-faint bg-paper px-1.5 py-0.5 text-xs"
+                    value={l.mood ?? ''}
+                    onChange={(e) => setMood(i, e.target.value)}
+                  >
+                    <option value="">mood…</option>
+                    {Mood.options.map((m) => (
+                      <option key={m} value={m}>
+                        {m}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 <div className="flex gap-1">
                   <button className="btn-quiet px-2 py-1 text-sm" aria-label={`Move line ${n} up`} disabled={i === 0} onClick={() => move(i, -1)}>
                     ↑

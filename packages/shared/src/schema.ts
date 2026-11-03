@@ -17,11 +17,16 @@ export const SafeId = z
   .regex(SAFE_ID_RE, 'id must be 1–64 characters: letters, digits, _ or -')
   .refine((id) => !WINDOWS_RESERVED_RE.test(id), 'id cannot be a Windows device name (CON, NUL, COM1, …)');
 
+/** How a line is delivered: sets voice pace, the pause after it, and the mascot's face. */
+export const Mood = z.enum(['excited', 'curious', 'serious', 'funny', 'calm', 'shocked']);
+export type Mood = z.infer<typeof Mood>;
+
 export const Line = z
   .object({
     id: SafeId,
     caption: z.string(),
     spoken: z.string(),
+    mood: Mood.optional(),
   })
   .superRefine((line, ctx) => {
     const c = splitWords(line.caption).length;
@@ -36,7 +41,7 @@ export const Line = z
   });
 export type Line = z.infer<typeof Line>;
 
-export const Expression = z.enum(['happy', 'thinking', 'surprised', 'wink']);
+export const Expression = z.enum(['happy', 'thinking', 'surprised', 'wink', 'excited', 'laughing', 'shocked', 'sad']);
 export type Expression = z.infer<typeof Expression>;
 
 export const Block = z.discriminatedUnion('type', [
@@ -143,11 +148,19 @@ export const Brand = z.object({
 });
 export type Brand = z.infer<typeof Brand>;
 
+/** Uploaded character image: served by our server under /character/ only. */
+export const CharacterImage = z
+  .string()
+  .regex(/^(http:\/\/127\.0\.0\.1:4000)?\/character\/[A-Za-z0-9_-]{1,80}\.(png|webp)$/, 'not a character image path');
+
 export const MascotConfig = z.object({
   body: z.string(),
   face: z.string(),
   accent: z.string(),
   signature: z.enum(['antenna', 'glasses', 'cap']),
+  /** 'robot' (built-in SVG, default) or 'image' (the owner's uploaded character / face). */
+  kind: z.enum(['robot', 'image']).optional(),
+  images: z.partialRecord(Expression, CharacterImage).optional(),
 });
 export type MascotConfig = z.infer<typeof MascotConfig>;
 

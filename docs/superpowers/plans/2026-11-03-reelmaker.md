@@ -263,6 +263,28 @@
 - [x] **Step 4:** PASS; manual: create reel → script → voice → captions works end-to-end on the Windows machine.
 - [x] **Step 5:** Commit `feat(web): script, voice and captions steps`.
 
+### Task 11b: Expressive reels — mood, new faces, custom character, better hooks (added 2026-11-03, owner-approved design)
+
+**Why:** owner feedback after Task 11: the voice and delivery felt flat; wants catchy hooks, human Hinglish, more expressions, and the option of their own character/face. Schema changes below were approved by the owner.
+
+**Files:**
+- Modify: `packages/shared/src/schema.ts`, add `packages/shared/src/mood.ts`; `py/ops/tts.py`; `packages/server/src/routes/audio.ts`, `src/routes/settings.ts`, `src/render.ts`, `src/app.ts`, `src/agent/prompts.ts`; `.claude/skills/reels/SKILL.md`; `docs/reel-schema.md`; `packages/video/src/Mascot.tsx`, `src/cues.ts`, `src/Reel.tsx`; `packages/web/src/steps/ScriptStep.tsx`, `src/pages/Mascot.tsx`, `vite.config.ts`
+- Test: `packages/shared/src/mood.test.ts`, `schema.test.ts`; `py/tests/test_tts_smoke.py`; `packages/server/src/routes/character.test.ts`, `src/routes/audio.test.ts`; `packages/video/src/cues.test.ts`; `packages/web/src/steps/ScriptStep.test.tsx`
+
+**Interfaces:**
+- Schema: `Mood = 'excited'|'curious'|'serious'|'funny'|'calm'|'shocked'`; `Line.mood?: Mood`. `Expression` adds `'excited'|'laughing'|'shocked'|'sad'` (8 total). `MascotConfig` adds `kind?: 'robot'|'image'` (default robot) and `images?: Partial<Record<Expression, string>>` whose values match `/^(http:\/\/127\.0\.0\.1:4000)?\/character\/[A-Za-z0-9_-]{1,80}\.(png|webp)$/`.
+- `mood.ts`: `moodSpeed(base: number, mood?: Mood): number` (× excited 1.12, funny 1.08, shocked 1.0, curious 0.98, serious 0.92, calm 0.88; clamped 0.7–1.4); `lineGap(line, isLast): number` seconds after a line (0 if last; 0.15 base; ends `?` 0.35, `!` 0.25, `…`/`...` 0.45; +0.1 for shocked/serious); `moodExpression(mood?: Mood): Expression | undefined` (excited→excited, curious→thinking, serious→thinking, funny→laughing, calm→happy, shocked→shocked). `spokenHash` also covers each line's mood.
+- `tts` op: each line may carry `speed` and `gapAfter`; `concat_lines(dir, ids, gaps?)` uses per-line gaps. Server voice job sends `speed = moodSpeed(voice.speed, line.mood)` and `gapAfter = lineGap(line, isLast)`.
+- `activeCues(cues, words, frame, lines?)`: expression = an expression cue started inside the current line, else the current line's `moodExpression`, else the latest started expression cue, else `'happy'`.
+- Character: `POST /api/mascot/image/:expression` (multipart png/webp ≤ 5 MB) → `DATA_DIR/mascot/<expression>-<8 hex>.png|webp`, sets `mascot.images[expression] = '/character/<file>'` (old file removed); `DELETE /api/mascot/image/:expression`; static `/character/` → `DATA_DIR/mascot`. `buildProps` turns image paths into `http://127.0.0.1:4000/character/...` for the renderer. Mascot component: `kind === 'image'` → `<Img>` of `images[expression] ?? images.happy` (robot if none), talking = scale/squash from loudness, small tilt on expression change. No lip-sync (needs GPU-class models).
+- Prompts/SKILL: hook patterns (shock question, "Ruko!", number promise, myth-bust, "Sach batau?"), short spoken lines, light fillers, emotion via punctuation, a `mood` on every line, expression changes on every emotional beat (no 1–3 cap), sharper CTA.
+
+- [x] **Step 1:** Failing tests for mood helpers, schema additions, per-line gaps/speed in tts, character upload route, voice job sending speed/gapAfter, activeCues mood rule, ScriptStep mood select.
+- [x] **Step 2:** Run → FAIL.
+- [x] **Step 3:** Implement.
+- [x] **Step 4:** PASS; render stills of the 4 new faces and an image character; regenerate a reel's voice and listen.
+- [x] **Step 5:** Commit `feat: expressive reels — mood, new faces, custom character, better hooks`.
+
 ### Task 12: Reel editor — Scenes, Review, Render steps
 
 **Files:**

@@ -86,6 +86,33 @@ describe('activeCues', () => {
     expect(activeCues(cues, words, 95).main).toBeUndefined(); // expressions are not main blocks
   });
 
+  describe('line mood drives the face', () => {
+    // 20 words as 4 lines of 5 words; line k starts at word 5k = frame 75k
+    const lines = [0, 1, 2, 3].map((k) => ({
+      id: `l${k + 1}`,
+      caption: 'a b c d e',
+      spoken: 'a b c d e',
+      ...(k === 1 ? { mood: 'funny' as const } : k === 2 ? { mood: 'shocked' as const } : {}),
+    }));
+
+    it('uses the current line mood when no expression cue is set inside that line', () => {
+      expect(activeCues([], words, 80, lines).expression).toBe('laughing'); // line 2, funny
+      expect(activeCues([], words, 160, lines).expression).toBe('shocked'); // line 3
+      expect(activeCues([], words, 10, lines).expression).toBe('happy'); // line 1, no mood
+    });
+
+    it('an expression cue inside the line overrides its mood', () => {
+      const cues = [face('f', 7, 'wink')]; // word 7 is in line 2
+      expect(activeCues(cues, words, 90, lines).expression).toBe('laughing'); // before the cue
+      expect(activeCues(cues, words, 110, lines).expression).toBe('wink');
+    });
+
+    it('a line without mood keeps the latest earlier expression cue', () => {
+      const cues = [face('f', 2, 'thinking')];
+      expect(activeCues(cues, words, 230, lines).expression).toBe('thinking'); // line 4 has no mood
+    });
+  });
+
   it('falls back to ~2.3 words/s when a word has no timing', () => {
     expect(cueStartFrame(title('a', 23), [])).toBe(300);
   });

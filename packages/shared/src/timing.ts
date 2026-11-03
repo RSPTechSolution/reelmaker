@@ -24,12 +24,13 @@ export function durationInFrames(words: WordTiming[]): number {
   return Math.max(MIN_FRAMES, frames);
 }
 
-/** Hash of everything the voice audio depends on: spoken text of every line + voice settings. */
+/** Hash of everything the voice audio depends on: spoken text and mood of every line + voice settings. */
 export function spokenHash(reel: Reel): string {
   const { engine, voiceId, speed } = reel.voice;
   return sha1Hex(
     JSON.stringify({
-      lines: reel.lines.map((l) => [l.id, l.spoken]),
+      // mood changes pace and pauses, so it belongs to the voice too
+      lines: reel.lines.map((l) => (l.mood ? [l.id, l.spoken, l.mood] : [l.id, l.spoken])),
       voice: [engine, voiceId, speed],
     }),
   );

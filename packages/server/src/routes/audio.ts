@@ -7,7 +7,7 @@ import path from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { splitWords, spokenHash, type Reel } from '@reelmaker/shared';
+import { lineGap, moodSpeed, splitWords, spokenHash, type Reel } from '@reelmaker/shared';
 import { HttpError } from '../errors.ts';
 import { startJob } from '../jobs.ts';
 import { reelDir } from '../paths.ts';
@@ -79,7 +79,13 @@ export function audioRoutes(deps: { worker: AudioWorker; convertAudio: ConvertAu
         const result = await deps.worker.call<TtsResult>(
           'tts',
           {
-            lines: voiced.lines.map((l) => ({ id: l.id, spoken: l.spoken })),
+            // each line at its mood's pace, with a pause after it from its mood and punctuation
+            lines: voiced.lines.map((l, i) => ({
+              id: l.id,
+              spoken: l.spoken,
+              speed: moodSpeed(voiced.voice.speed, l.mood),
+              gapAfter: lineGap(l, i === voiced.lines.length - 1),
+            })),
             voice: voiced.voice.voiceId,
             speed: voiced.voice.speed,
             dir,

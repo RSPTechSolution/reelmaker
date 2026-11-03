@@ -55,6 +55,28 @@ describe('ScriptStep', () => {
     expect(new Set(lines.map((l: { id: string }) => l.id)).size).toBe(6);
   });
 
+  it('sets and clears a line mood', () => {
+    const onSave = vi.fn(async (r: Reel) => r);
+    render(<ScriptStep reel={example()} onSave={onSave} />);
+    const mood = screen.getByLabelText('Line 1 mood') as HTMLSelectElement;
+    expect(mood.value).toBe('');
+    fireEvent.change(mood, { target: { value: 'excited' } });
+    fireEvent.click(saveButton());
+    expect(onSave.mock.calls[0][0].lines[0].mood).toBe('excited');
+  });
+
+  it('clearing a mood removes the field', () => {
+    const onSave = vi.fn(async (r: Reel) => r);
+    const reel = example();
+    reel.lines[0].mood = 'calm';
+    render(<ScriptStep reel={reel} onSave={onSave} />);
+    const mood = screen.getByLabelText('Line 1 mood') as HTMLSelectElement;
+    expect(mood.value).toBe('calm');
+    fireEvent.change(mood, { target: { value: '' } });
+    fireEvent.click(saveButton());
+    expect('mood' in onSave.mock.calls[0][0].lines[0]).toBe(false);
+  });
+
   it('shows the estimated duration at 2.3 words per second', () => {
     render(<ScriptStep reel={example()} onSave={vi.fn()} />);
     // example has 40 words → 40 / 2.3 ≈ 17 s

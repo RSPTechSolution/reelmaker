@@ -60,9 +60,11 @@ def _write_wav(path: str, audio: np.ndarray) -> None:
     os.replace(tmp, path)
 
 
-def concat_lines(dir_: str, ids: list[str]) -> dict:
-    """Join lines/<id>.wav in order with GAP_SEC silence into vo.wav; return line windows."""
-    gap = np.zeros(int(SR * GAP_SEC), dtype=np.float32)
+def concat_lines(dir_: str, ids: list[str], gaps: list[float] | None = None) -> dict:
+    """Join lines/<id>.wav in order into vo.wav with silence between lines; return line windows.
+
+    gaps[k] is the pause after line k (seconds); without gaps every pause is GAP_SEC.
+    """
     parts, windows = [], []
     t = 0
     for k, line_id in enumerate(ids):
@@ -73,6 +75,8 @@ def concat_lines(dir_: str, ids: list[str]) -> dict:
         if sr != SR:
             raise RuntimeError(f"line {line_id} has sample rate {sr}, expected {SR}")
         if k > 0:
+            gap_sec = GAP_SEC if gaps is None else max(0.0, float(gaps[k - 1]))
+            gap = np.zeros(int(round(SR * gap_sec)), dtype=np.float32)
             parts.append(gap)
             t += len(gap)
         windows.append([round(t / SR, 3), round((t + len(audio)) / SR, 3)])
@@ -100,10 +104,12 @@ def tts(args: dict, progress=None) -> dict:
     for k, line in enumerate(todo):
         if progress:
             progress(k / (len(todo) + 1), f"voice line {k + 1}/{len(todo)}")
-        audio = synthesize(line["spoken"], voice, speed)
+        # per-line speed comes from the line's mood (computed by the server); else the reel's speed
+        audio = synthesize(line["spoken"], voice, float(line.get("speed", speed)))
         _write_wav(os.path.join(dir_, "lines", f"{line['id']}.wav"), audio)
 
-    result = concat_lines(dir_, ids)
+    gaps = [float(l.get("gapAfter", GAP_SEC)) for l in lines]
+    result = concat_lines(dir_, ids, gaps)
     if progress:
         progress(1.0, "voice ready")
     return result

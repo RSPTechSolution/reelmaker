@@ -41,7 +41,7 @@ export const Reel: React.FC<ReelProps> = (props) => {
   const frame = useCurrentFrame();
   const { durationInFrames } = useVideoConfig();
   const fontFamily = useBrandFont(brand.font);
-  const { main, stickers, expression } = activeCues(reel.cues, words, frame);
+  const { main, stickers, expression } = activeCues(reel.cues, words, frame, reel.lines);
   const endStart = durationInFrames - END_CARD_FRAMES;
 
   const open = Math.max(0, Math.min(1, loudness[frame] ?? 0));

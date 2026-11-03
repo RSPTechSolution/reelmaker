@@ -30,6 +30,34 @@ def test_concat_lines_windows_and_gap(tmp_path):
     assert np.all(gap == 0)
 
 
+def test_concat_lines_uses_per_line_gaps(tmp_path):
+    _wav(tmp_path / "lines" / "a.wav", 1.0)
+    _wav(tmp_path / "lines" / "b.wav", 0.5)
+    _wav(tmp_path / "lines" / "c.wav", 0.5)
+    res = concat_lines(str(tmp_path), ["a", "b", "c"], [0.35, 0.25, 0.0])
+    assert res["windows"] == [[0.0, 1.0], [1.35, 1.85], [2.1, 2.6]]
+    assert res["duration"] == pytest.approx(2.6)
+
+
+def test_tts_passes_each_line_speed_and_gap(tmp_path, monkeypatch):
+    import ops.tts as tts_mod
+
+    calls = []
+
+    def fake_synth(text, voice, speed):
+        calls.append((text, speed))
+        return np.full(int(SR * 0.5), 0.1, dtype=np.float32)
+
+    monkeypatch.setattr(tts_mod, "synthesize", fake_synth)
+    lines = [
+        {"id": "l1", "spoken": "रुको!", "speed": 1.12, "gapAfter": 0.25},
+        {"id": "l2", "spoken": "सुनो", "gapAfter": 0.0},
+    ]
+    res = tts({"lines": lines, "voice": "hf_alpha", "speed": 1.0, "dir": str(tmp_path)})
+    assert calls == [("रुको!", 1.12), ("सुनो", 1.0)]  # no per-line speed → reel speed
+    assert res["windows"] == [[0.0, 0.5], [0.75, 1.25]]
+
+
 def test_concat_lines_reports_missing_line(tmp_path):
     _wav(tmp_path / "lines" / "a.wav", 0.2)
     with pytest.raises(RuntimeError, match="line b has no audio"):

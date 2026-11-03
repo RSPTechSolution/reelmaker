@@ -1,4 +1,5 @@
 import React from 'react';
+import { Img } from 'remotion';
 import type { Expression, MascotConfig } from '@reelmaker/shared';
 import { MASCOT_H, MASCOT_W } from './layout.ts';
 
@@ -51,6 +52,45 @@ function Eyes({ expression, blink, color }: { expression: Expression; blink: boo
           <path d={`M${EYE_R.x - 16} ${EYE_R.y + 4} q16 -18 32 0`} {...stroke} />
         </g>
       );
+    case 'excited':
+      return (
+        <g>
+          <circle cx={EYE_L.x} cy={EYE_L.y} r={17} fill={color} />
+          <circle cx={EYE_R.x} cy={EYE_R.y} r={17} fill={color} />
+          <circle cx={EYE_L.x + 6} cy={EYE_L.y - 6} r={5} fill={SCREEN} />
+          <circle cx={EYE_R.x + 6} cy={EYE_R.y - 6} r={5} fill={SCREEN} />
+          <path d={`M${EYE_L.x - 16} ${EYE_L.y - 30} q16 -14 32 -4`} {...stroke} />
+          <path d={`M${EYE_R.x - 16} ${EYE_R.y - 34} q16 -10 32 4`} {...stroke} />
+        </g>
+      );
+    case 'laughing':
+      // eyes squeezed shut into happy arcs
+      return (
+        <g>
+          <path d={`M${EYE_L.x - 16} ${EYE_L.y + 4} q16 -20 32 0`} {...stroke} />
+          <path d={`M${EYE_R.x - 16} ${EYE_R.y + 4} q16 -20 32 0`} {...stroke} />
+        </g>
+      );
+    case 'shocked':
+      return (
+        <g>
+          <circle cx={EYE_L.x} cy={EYE_L.y} r={18} fill="none" stroke={color} strokeWidth={6} />
+          <circle cx={EYE_R.x} cy={EYE_R.y} r={18} fill="none" stroke={color} strokeWidth={6} />
+          <circle cx={EYE_L.x} cy={EYE_L.y} r={6} fill={color} />
+          <circle cx={EYE_R.x} cy={EYE_R.y} r={6} fill={color} />
+          <path d={`M${EYE_L.x - 16} ${EYE_L.y - 38} l30 -6`} {...stroke} />
+          <path d={`M${EYE_R.x - 14} ${EYE_R.y - 44} l30 6`} {...stroke} />
+        </g>
+      );
+    case 'sad':
+      return (
+        <g>
+          <circle cx={EYE_L.x} cy={EYE_L.y + 6} r={11} fill={color} />
+          <circle cx={EYE_R.x} cy={EYE_R.y + 6} r={11} fill={color} />
+          <path d={`M${EYE_L.x - 16} ${EYE_L.y - 18} l30 -10`} {...stroke} />
+          <path d={`M${EYE_R.x - 14} ${EYE_R.y - 28} l30 10`} {...stroke} />
+        </g>
+      );
     default:
       return (
         <g fill={color}>
@@ -72,8 +112,16 @@ function Mouth({ expression, open, color }: { expression: Expression; open: numb
   switch (expression) {
     case 'surprised':
       return <ellipse cx={cx} cy={cy} rx={11} ry={13} fill={color} />;
+    case 'shocked':
+      return <ellipse cx={cx} cy={cy + 2} rx={13} ry={17} fill={color} />;
     case 'thinking':
       return <path d={`M${cx - 14} ${cy + 2} l26 -5`} {...stroke} />;
+    case 'excited':
+    case 'laughing':
+      // wide open grin
+      return <path d={`M${cx - 26} ${cy - 8} h52 q0 26 -26 26 q-26 0 -26 -26 z`} fill={color} />;
+    case 'sad':
+      return <path d={`M${cx - 20} ${cy + 8} q20 -16 40 0`} {...stroke} />;
     default:
       return <path d={`M${cx - 22} ${cy - 6} q22 20 44 0`} {...stroke} />;
   }
@@ -108,8 +156,67 @@ function Signature({ config }: { config: MascotConfig }) {
   }
 }
 
-/** Built-in robot mascot: round head, face screen with dot eyes, signature, stubby arms. */
-export const Mascot: React.FC<MascotProps> = ({ config, expression, open, blink = false, width = MASCOT_W }) => (
+// Small pose per expression for an image character (it has no drawable face).
+const POSE: Record<Expression, { rotate: number; lift: number; scale: number }> = {
+  happy: { rotate: 0, lift: 0, scale: 1 },
+  thinking: { rotate: -5, lift: 0, scale: 1 },
+  surprised: { rotate: 0, lift: -10, scale: 1.04 },
+  wink: { rotate: 4, lift: 0, scale: 1 },
+  excited: { rotate: -3, lift: -14, scale: 1.06 },
+  laughing: { rotate: 6, lift: -4, scale: 1.03 },
+  shocked: { rotate: 0, lift: -16, scale: 1.08 },
+  sad: { rotate: 3, lift: 10, scale: 0.97 },
+};
+
+/** The owner's uploaded character: one image per expression (falls back to the happy one). */
+function ImageCharacter({
+  src,
+  expression,
+  open,
+  width,
+  html,
+}: {
+  src: string;
+  expression: Expression;
+  open: number;
+  width: number;
+  html: boolean;
+}) {
+  const pose = POSE[expression];
+  // talking: stretch up and narrow slightly with loudness, like a bouncy puppet
+  const sx = pose.scale * (1 - open * 0.04);
+  const sy = pose.scale * (1 + open * 0.07);
+  const style: React.CSSProperties = {
+    width,
+    height: (width * MASCOT_H) / MASCOT_W,
+    objectFit: 'contain',
+    objectPosition: 'center bottom',
+    transformOrigin: '50% 100%',
+    transform: `translateY(${pose.lift}px) rotate(${pose.rotate}deg) scale(${sx}, ${sy})`,
+    display: 'block',
+  };
+  return html ? <img src={src} alt="" style={style} /> : <Img src={src} style={style} />;
+}
+
+/**
+ * The mascot: the built-in robot (round head, face screen, signature, stubby arms), or the
+ * owner's uploaded character when `config.kind === 'image'`. Pass `html` outside Remotion
+ * (plain <img> instead of Remotion's <Img>, which holds the render until the image loads).
+ */
+export const Mascot: React.FC<MascotProps & { html?: boolean }> = ({
+  config,
+  expression,
+  open,
+  blink = false,
+  width = MASCOT_W,
+  html = false,
+}) => {
+  const image = config.kind === 'image' ? (config.images?.[expression] ?? config.images?.happy) : undefined;
+  if (image) return <ImageCharacter src={image} expression={expression} open={open} width={width} html={html} />;
+  return <Robot config={config} expression={expression} open={open} blink={blink} width={width} />;
+};
+
+const Robot: React.FC<MascotProps> = ({ config, expression, open, blink = false, width = MASCOT_W }) => (
   <svg
     width={width}
     height={(width * MASCOT_H) / MASCOT_W}

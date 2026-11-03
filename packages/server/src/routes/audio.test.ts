@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { spokenHash, type Reel } from '@reelmaker/shared';
+import { lineGap, moodSpeed, spokenHash, type Reel } from '@reelmaker/shared';
 import { buildApp } from '../app.ts';
 import { getJob } from '../jobs.ts';
 import { reelDir } from '../paths.ts';
@@ -79,9 +79,25 @@ describe('voice job', () => {
     const call = calls.at(-1)!;
     expect(call.op).toBe('tts');
     expect(call.args).toMatchObject({ voice: 'hf_alpha', speed: 1, dir: reelDir(reel.id) });
-    expect(call.args.lines).toEqual(reel.lines.map((l) => ({ id: l.id, spoken: l.spoken })));
+    const last = reel.lines.length - 1;
+    expect(call.args.lines).toEqual(
+      reel.lines.map((l, i) => ({ id: l.id, spoken: l.spoken, speed: moodSpeed(1, l.mood), gapAfter: lineGap(l, i === last) })),
+    );
     expect(call.args.only).toBeUndefined();
     expect(job.events.some((e) => e.type === 'progress')).toBe(true);
+  });
+
+  it('voices each line at its mood pace with a mood/punctuation pause after it', async () => {
+    const reel = await reelWithScript();
+    reel.lines[0] = { ...reel.lines[0], spoken: 'एआई से वीडियो बनाना अब बहुत ईज़ी है!', mood: 'excited' };
+    reel.lines[1] = { ...reel.lines[1], mood: 'calm' };
+    await saveReel(reel);
+    await finished((await post(`/api/reels/${reel.id}/voice`)).json().jobId);
+    const lines = calls.at(-1)!.args.lines as { speed: number; gapAfter: number }[];
+    expect(lines[0].speed).toBeCloseTo(1.12);
+    expect(lines[0].gapAfter).toBeCloseTo(0.25);
+    expect(lines[1].speed).toBeCloseTo(0.88);
+    expect(lines.at(-1)!.gapAfter).toBe(0);
   });
 
   it('passes only[] through and rejects unknown line ids', async () => {

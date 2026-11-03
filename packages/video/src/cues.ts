@@ -1,4 +1,4 @@
-import { FPS, wordFrame, type Cue, type Expression, type WordTiming } from '@reelmaker/shared';
+import { FPS, moodExpression, splitWords, wordFrame, type Cue, type Expression, type Line, type WordTiming } from '@reelmaker/shared';
 
 /** Words per second assumed for a cue whose word has no timing yet (before Captions sync). */
 const FALLBACK_WPS = 2.3;
@@ -25,9 +25,15 @@ export type ActiveCues = { main?: Cue; stickers: Cue[]; expression: Expression }
  *   in the slot; once it passes its untilWord the slot is empty (the older one does not return).
  * - stickers: started stickers not past their untilWord; without untilWord a sticker lasts until
  *   the next main block starts.
- * - expression: the latest started expression cue, else 'happy'.
+ * - expression: an expression cue started inside the current line, else the current line's mood
+ *   face (when `lines` are given), else the latest started expression cue, else 'happy'.
  */
-export function activeCues(cues: Cue[], words: WordTiming[], frame: number): ActiveCues {
+export function activeCues(
+  cues: Cue[],
+  words: WordTiming[],
+  frame: number,
+  lines?: Pick<Line, 'caption' | 'mood'>[],
+): ActiveCues {
   const timed = cues
     .map((cue, order) => ({ cue, order, start: cueStartFrame(cue, words), end: cueEndFrame(cue, words) }))
     .sort((a, b) => a.start - b.start || a.order - b.order);
@@ -46,7 +52,24 @@ export function activeCues(cues: Cue[], words: WordTiming[], frame: number): Act
     })
     .map((t) => t.cue);
 
-  const face = started.filter((t) => t.cue.block.type === 'expression').at(-1)?.cue.block;
-  const expression = face && face.type === 'expression' ? face.expression : 'happy';
+  const faces = started.filter((t) => t.cue.block.type === 'expression');
+  const faceOf = (t?: (typeof faces)[number]) => (t?.cue.block.type === 'expression' ? t.cue.block.expression : undefined);
+  const line = currentLine(lines, words, frame);
+  const fromCueInLine = line ? faceOf(faces.filter((t) => t.start >= line.startFrame).at(-1)) : undefined;
+  const expression = fromCueInLine ?? moodExpression(line?.mood) ?? faceOf(faces.at(-1)) ?? 'happy';
   return { main, stickers, expression };
+}
+
+/** The script line being spoken at `frame` (the line of the latest started word) and its start frame. */
+function currentLine(lines: Pick<Line, 'caption' | 'mood'>[] | undefined, words: WordTiming[], frame: number) {
+  if (!lines?.length) return undefined;
+  let first = 0;
+  let found: { mood?: Line['mood']; startFrame: number } | undefined;
+  for (const l of lines) {
+    const n = splitWords(l.caption).length;
+    const startFrame = wordFrame(words, first, first / FALLBACK_WPS);
+    if (n > 0 && startFrame <= frame) found = { mood: l.mood, startFrame };
+    first += n;
+  }
+  return found;
 }

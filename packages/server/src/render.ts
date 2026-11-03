@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, rename, rm } from 'node:fs/promises';
 import path from 'node:path';
-import type { Reel, ReelProps, WordTiming } from '@reelmaker/shared';
+import type { MascotConfig, Reel, ReelProps, WordTiming } from '@reelmaker/shared';
 import { wordFrame } from '@reelmaker/shared';
 import { HttpError } from './errors.ts';
 import { reelDir, REPO_ROOT } from './paths.ts';
@@ -42,6 +42,15 @@ async function readJsonIf<T>(file: string, fallback: T): Promise<T> {
   return existsSync(file) ? (JSON.parse(await readFile(file, 'utf8')) as T) : fallback;
 }
 
+/** The renderer's Chrome loads character images from our server, so it needs absolute URLs. */
+function absoluteImages(mascot: MascotConfig): MascotConfig {
+  if (!mascot.images) return mascot;
+  const images = Object.fromEntries(
+    Object.entries(mascot.images).map(([k, v]) => [k, v.startsWith('/') ? `${SERVER_ORIGIN}${v}` : v]),
+  );
+  return { ...mascot, images };
+}
+
 export async function buildProps(id: string): Promise<ReelProps> {
   const reel = await getReel(id);
   const dir = reelDir(id);
@@ -52,7 +61,7 @@ export async function buildProps(id: string): Promise<ReelProps> {
     words: await readJsonIf<WordTiming[]>(wordsFile, []),
     loudness: await readJsonIf<number[]>(path.join(dir, 'loudness.json'), []),
     brand: await getBrand(),
-    mascot: await getMascot(),
+    mascot: absoluteImages(await getMascot()),
     audioSrc: existsSync(path.join(dir, 'vo.wav')) ? `${SERVER_ORIGIN}/files/${id}/vo.wav` : null,
   };
 }

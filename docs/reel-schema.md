@@ -31,6 +31,7 @@ Every reel lives in `data/reels/<id>/reel.json`. The server validates it with zo
 - `spoken` — the same sentence in **Devanagari**, fed to the voice. English tech words are transliterated (`AI` → `एआई`, `video` → `वीडियो`). Numbers written as words (`3` → `तीन`). No emojis.
 - **`caption` and `spoken` must have exactly the same number of words** (split on spaces). Word *i* of `spoken` is said while word *i* of `caption` is highlighted. Punctuation stays attached to its word (`Step 1:` is two words).
 - `id` — unique within the reel (`l1`, `l2`, …). Keep ids stable when editing a line so only that line's audio is regenerated.
+- `mood` — optional: `excited` | `curious` | `serious` | `funny` | `calm` | `shocked`. Sets how the line is said: voice pace (excited/funny faster, serious/calm slower), the pause after it (longer after `?`, `!`, `…`, and for shocked/serious), and the mascot's face during the line unless an `expression` cue in that line overrides it.
 
 ## Word indexes
 
@@ -55,7 +56,7 @@ Words are numbered from **0** across the whole script, in order, using `caption`
 | `bigNumber` | `to` (number), `prefix?`, `suffix?` | Counts up to a number, e.g. `{"to": 90, "suffix": "%"}`. |
 | `sticker` | `text` | Small overlay that sits on top of the main block (max 1–2 per reel). |
 | `list` | `items` (1–5 strings) | Short recap. |
-| `expression` | `expression`: `happy` \| `thinking` \| `surprised` \| `wink` | Changes the mascot's face; shows nothing else. |
+| `expression` | `expression`: `happy` \| `thinking` \| `surprised` \| `wink` \| `excited` \| `laughing` \| `shocked` \| `sad` | Changes the mascot's face; shows nothing else. |
 
 `title`, `card`, `bigNumber` and `list` are **main** blocks: each new one replaces the previous one. `sticker` and `expression` do not replace anything.
 

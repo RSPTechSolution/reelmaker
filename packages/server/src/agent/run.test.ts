@@ -243,6 +243,21 @@ describe('prompts', () => {
   it('script prompt sets the word budget from targetSeconds', () => {
     expect(scriptPrompt({ ...reel, targetSeconds: 30 })).toContain('about 69 words');
   });
+  it('script prompt asks for a hook pattern, human Hinglish and a mood on every line', () => {
+    const p = scriptPrompt(reel);
+    expect(p).toMatch(/Ruko!/);
+    expect(p).toMatch(/Sach batau\?/);
+    expect(p).toMatch(/"mood"/);
+    for (const m of ['excited', 'curious', 'serious', 'funny', 'calm', 'shocked']) expect(p).toContain(m);
+    expect(p).toMatch(/!.*\?.*…/s); // emotion through punctuation
+  });
+
+  it('scenes prompt allows a face change on every emotional beat with all 8 faces', () => {
+    const p = scenesPrompt(reel, []);
+    expect(p).not.toMatch(/1–3 "expression"/);
+    for (const f of ['happy', 'thinking', 'surprised', 'wink', 'excited', 'laughing', 'shocked', 'sad']) expect(p).toContain(f);
+  });
+
   it('scenes prompt lists words with index and time', () => {
     const p = scenesPrompt(reel, [{ i: 9, caption: '3', spoken: 'तीन', start: 2.5, end: 2.8, filled: false }]);
     expect(p).toContain('9 3 @2.50s');

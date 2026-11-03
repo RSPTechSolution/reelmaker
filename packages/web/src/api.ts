@@ -50,6 +50,13 @@ export const api = {
   saveBrand: (b: Brand) => request<Brand>('PUT', '/api/brand', b),
   getMascot: () => request<MascotConfig>('GET', '/api/mascot'),
   saveMascot: (m: MascotConfig) => request<MascotConfig>('PUT', '/api/mascot', m),
+  uploadCharacter: (expression: string, file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    return request<MascotConfig>('POST', `/api/mascot/image/${encodeURIComponent(expression)}`, form);
+  },
+  deleteCharacter: (expression: string) =>
+    request<MascotConfig>('DELETE', `/api/mascot/image/${encodeURIComponent(expression)}`),
 
   startVoice: (id: string, only?: string[]) => request<JobRef>('POST', `${reel(id)}/voice`, only ? { only } : {}),
   uploadVoice: (id: string, file: File) => {

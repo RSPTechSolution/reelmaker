@@ -4,11 +4,11 @@ import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { spokenHash, type ReelProps } from '@reelmaker/shared';
+import { defaultMascot, spokenHash, type ReelProps } from '@reelmaker/shared';
 import { buildApp } from './app.ts';
 import { reelDir, REPO_ROOT } from './paths.ts';
 import { buildProps, contactFrames, coverFrame, renderMp4, REEL_COMPOSITION_ID } from './render.ts';
-import { saveReel } from './store.ts';
+import { saveMascot, saveReel } from './store.ts';
 
 let n = 0;
 async function reel(opts: { words?: boolean; timingHash?: 'ok' | 'stale' } = {}) {
@@ -64,6 +64,14 @@ describe('buildProps', () => {
     expect(props.brand.font).toBe('Baloo 2');
     expect(props.mascot.signature).toBe('antenna');
     expect(props.audioSrc).toBe(`http://127.0.0.1:4000/files/${r.id}/vo.wav`);
+  });
+
+  it('gives the renderer absolute URLs for character images', async () => {
+    const r = await reel({ words: true });
+    await saveMascot({ ...defaultMascot, kind: 'image', images: { happy: '/character/happy-1a2b3c4d.png' } });
+    const props = await buildProps(r.id);
+    expect(props.mascot.images?.happy).toBe('http://127.0.0.1:4000/character/happy-1a2b3c4d.png');
+    await saveMascot(defaultMascot);
   });
 
   it('has no audio without vo.wav and no loudness without loudness.json', async () => {

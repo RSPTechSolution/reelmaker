@@ -6,7 +6,7 @@ import { buildApp } from '../app.ts';
 import { startJob } from '../jobs.ts';
 import { reelDir } from '../paths.ts';
 
-const app = buildApp();
+const app = buildApp({ allowedHosts: ['localhost:80'] }); // app.inject's default Host
 
 // Test-only route that starts a long job, to check the HTTP mapping of the one-job-per-reel rule.
 let release: () => void = () => {};

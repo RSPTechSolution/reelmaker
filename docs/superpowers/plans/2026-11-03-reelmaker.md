@@ -141,7 +141,7 @@
 - `paths.ts`: `DATA_DIR` (env `REEL_DATA_DIR` or `<repo>/data`), `reelDir(id)`, `reelFile(id)`.
 - `store.ts`: `createReel(input: {topic, hook?, targetSeconds?}): Promise<Reel>` (id = `yyyymmdd-hhmm-<slug>`), `getReel(id)`, `listReels(): Promise<ReelSummary[]>` (`{id,title,updatedAt,status}`), `saveReel(reel)` (zod-validate, atomic write via temp file + rename; every route validates `:id` with `SafeId`, and `PUT` rejects a body whose `reel.id` ≠ `:id`; `reelDir` asserts the resolved path stays inside `DATA_DIR/reels`), `backupReel(id)`, `restoreReel(id)`, `getBrand/saveBrand`, `getMascot/saveMascot`, `reelStatus(reel, files): {script: bool, voice: 'none'|'ok'|'stale', timing: 'none'|'ok'|'stale', rendered: bool}` (stale = stored hash ≠ `spokenHash(reel)`).
 - `jobs.ts`: `startJob(kind: string, reelId: string, fn: (ctx: {progress(p: number, msg?: string): void, log(text: string): void}) => Promise<unknown>): Job`; `getJob(id)`; `subscribe(id, listener)`. One running job per reel (second → HTTP 409).
-- Routes: `POST /api/reels`, `GET /api/reels`, `GET /api/reels/:id` (→ `{reel, status, words?, report?}`), `PUT /api/reels/:id` (400 with zod issues on invalid), `GET/PUT /api/brand`, `GET/PUT /api/mascot`, `GET /api/jobs/:id/events` (SSE: `progress`, `log`, `done`, `error` events), static `/files/` → `DATA_DIR/reels`.
+- Routes: `POST /api/reels`, `GET /api/reels`, `GET /api/reels/:id` (→ `{reel, status, words?, report?}`), `PUT /api/reels/:id` (400 with zod issues on invalid), `GET/PUT /api/brand`, `GET/PUT /api/mascot`, `GET /api/jobs/:id/events` (SSE: `progress`, `log`, `done`, `error` events), static `/files/` → `DATA_DIR/reels`. An `onRequest` guard returns 403 unless Host is `127.0.0.1:4000`/`localhost:4000` (DNS rebinding), and 403 for POST/PUT/PATCH/DELETE whose `Origin` is present and not `http://{localhost,127.0.0.1}:{5173,4000}` (added after security review).
 
 - [x] **Step 1: Failing tests** (use `app.inject`, temp `REEL_DATA_DIR`): `creates and lists a reel`; `PUT rejects word-count mismatch with 400`; `saveReel is atomic` (no `.tmp` left behind); `marks voice stale when spoken text changes` (save hashes.voice, edit spoken → status.voice `stale`; edit caption only → `ok`); `second job on same reel returns 409`; `SSE stream ends with done`.
 - [x] **Step 2:** `npx vitest run packages/server` → FAIL.
@@ -236,7 +236,7 @@
 
 - [ ] **Step 1: Failing tests:** `useJob collects logs and finishes` (mock EventSource); `api throws ApiError with zod issues on 400`.
 - [ ] **Step 2:** `npx vitest run packages/web` → FAIL.
-- [ ] **Step 3:** Implement. Vite config: proxy `/api` and `/files` → `http://127.0.0.1:4000`; alias `@reelmaker/video` to the workspace package.
+- [ ] **Step 3:** Implement. Vite config: proxy `/api` and `/files` → `http://127.0.0.1:4000` with `changeOrigin: true` (the server only accepts Host `127.0.0.1:4000`/`localhost:4000`); alias `@reelmaker/video` to the workspace package.
 - [ ] **Step 4:** PASS; `npm run dev` (root script runs server + web concurrently) → Library loads, Brand changes show in the preview.
 - [ ] **Step 5:** Commit `feat(web): shell, library, brand and mascot pages`.
 

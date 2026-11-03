@@ -1,51 +1,164 @@
-import { useEffect, useState } from 'react';
-import { useLocation, useParams } from 'react-router-dom';
-import { api, type ReelDetail } from '../api.ts';
-import { StepTrack } from '../components/StepTrack.tsx';
-import { useJob } from '../useJob.ts';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { NavLink, useLocation, useParams } from 'react-router-dom';
+import type { Brand, MascotConfig, ReelProps } from '@reelmaker/shared';
+import { api, fileUrl, type ReelDetail, type ReelStatus } from '../api.ts';
+import { AgentChat } from '../components/AgentChat.tsx';
+import { Preview } from '../components/Preview.tsx';
+import { demoProps } from '../demo.ts';
+import { CaptionsStep } from '../steps/CaptionsStep.tsx';
+import { ScriptStep } from '../steps/ScriptStep.tsx';
+import { VoiceStep } from '../steps/VoiceStep.tsx';
 
-// Minimal editor shell for Task 10 (shows the agent's progress after "Create reel").
-// Task 11 replaces this with the full Script · Voice · Captions · Scenes · Review · Render stepper.
+type StepKey = 'script' | 'voice' | 'captions' | 'scenes' | 'review' | 'render';
+type Mark = 'done' | 'stale' | 'todo';
+
+const STEPS: { key: StepKey; label: string; mark: (s: ReelStatus) => Mark }[] = [
+  { key: 'script', label: 'Script', mark: (s) => (s.script ? 'done' : 'todo') },
+  { key: 'voice', label: 'Voice', mark: (s) => (s.voice === 'ok' ? 'done' : s.voice === 'stale' ? 'stale' : 'todo') },
+  { key: 'captions', label: 'Captions', mark: (s) => (s.timing === 'ok' ? 'done' : s.timing === 'stale' ? 'stale' : 'todo') },
+  { key: 'scenes', label: 'Scenes', mark: () => 'todo' },
+  { key: 'review', label: 'Review', mark: () => 'todo' },
+  { key: 'render', label: 'Render', mark: (s) => (s.rendered ? 'done' : 'todo') },
+];
+const markStyle: Record<Mark, string> = { done: 'bg-leaf', stale: 'bg-sindoor', todo: 'bg-ink-faint' };
+
+function StaleBanner({ status }: { status: ReelStatus }) {
+  if (status.voice === 'stale') {
+    return (
+      <p role="alert" className="rounded-md border border-sindoor/40 bg-sindoor/5 px-4 py-2 text-sindoor">
+        The script changed after the voice was made. Regenerate the voice, then sync the captions again.
+      </p>
+    );
+  }
+  if (status.timing === 'stale') {
+    return (
+      <p role="alert" className="rounded-md border border-sindoor/40 bg-sindoor/5 px-4 py-2 text-sindoor">
+        The captions are out of date. Sync them again in the Captions step.
+      </p>
+    );
+  }
+  return null;
+}
+
 export function ReelEditor() {
-  const { id = '' } = useParams();
+  const { id = '', step = 'script' } = useParams();
   const location = useLocation();
-  const jobId = (location.state as { jobId?: string } | null)?.jobId ?? null;
-  const job = useJob(jobId);
+  const initialJob = (location.state as { jobId?: string } | null)?.jobId ?? null;
   const [detail, setDetail] = useState<ReelDetail | null>(null);
+  const [brand, setBrand] = useState<Brand>(demoProps.brand);
+  const [mascot, setMascot] = useState<MascotConfig>(demoProps.mascot);
+  const [loudness, setLoudness] = useState<number[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
+  const reload = useCallback(() => {
+    api.getReel(id).then(
+      (d) => {
+        setDetail(d);
+        setError(null);
+      },
+      (e) => setError(e instanceof Error ? e.message : String(e)),
+    );
+  }, [id]);
+  useEffect(reload, [reload]);
   useEffect(() => {
-    api.getReel(id).then(setDetail, () => setDetail(null));
-  }, [id, job.status]);
+    api.getBrand().then(setBrand, () => {});
+    api.getMascot().then(setMascot, () => {});
+  }, []);
+  // mouth movement for the preview: per-frame loudness written by the Captions step
+  const timing = detail?.status.timing ?? 'none';
+  const stamp = detail?.reel.updatedAt;
+  useEffect(() => {
+    if (timing === 'none') return setLoudness([]);
+    fetch(fileUrl(id, 'loudness.json', stamp))
+      .then((r) => (r.ok ? r.json() : []))
+      .then(setLoudness, () => setLoudness([]));
+  }, [id, timing, stamp]);
+
+  const props = useMemo<ReelProps | null>(
+    () =>
+      detail
+        ? {
+            reel: detail.reel,
+            words: detail.words ?? [],
+            loudness,
+            brand,
+            mascot,
+            audioSrc: detail.status.voice !== 'none' ? fileUrl(id, 'vo.wav', detail.reel.updatedAt) : null,
+          }
+        : null,
+    [detail, loudness, brand, mascot, id],
+  );
+
+  if (error) return <p className="text-sindoor">Could not open this reel: {error}</p>;
+  if (!detail || !props) return <p className="text-ink-soft">Loading…</p>;
+  const { reel, status } = detail;
+
+  let body;
+  switch (step as StepKey) {
+    case 'script':
+      body = (
+        <ScriptStep
+          reel={reel}
+          onSave={async (r) => {
+            const saved = await api.saveReel(r);
+            reload();
+            return saved;
+          }}
+          agent={
+            <AgentChat
+              reelId={reel.id}
+              mode="script"
+              initialJobId={initialJob}
+              placeholder={reel.lines.length ? 'e.g. hook aur punchy banao' : 'Optional: anything the script must say'}
+              onDone={reload}
+            />
+          }
+        />
+      );
+      break;
+    case 'voice':
+      body = <VoiceStep detail={detail} onChanged={reload} />;
+      break;
+    case 'captions':
+      body = <CaptionsStep detail={detail} onChanged={reload} />;
+      break;
+    default:
+      body = <p className="text-ink-soft">This step is not built yet.</p>;
+  }
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-6">
-      <div className="flex items-end justify-between gap-6">
-        <h1 className="text-2xl font-bold">{detail?.reel.title ?? id}</h1>
-        {detail ? <StepTrack status={detail.status} /> : null}
+    <div className="flex flex-wrap items-start gap-10">
+      <div className="flex min-w-[520px] max-w-3xl flex-1 flex-col gap-5">
+        <h1 className="text-2xl font-bold">{reel.title}</h1>
+        <nav aria-label="Steps">
+          <ol className="flex flex-wrap gap-1 border-b border-ink-faint/60">
+            {STEPS.map((s, i) => {
+              const mark = s.mark(status);
+              return (
+                <li key={s.key}>
+                  <NavLink
+                    to={`/reels/${reel.id}/${s.key}`}
+                    className={({ isActive }) =>
+                      `-mb-px flex items-center gap-2 border-b-2 px-3 py-2 text-[15px] ${isActive ? 'border-ink font-semibold' : 'border-transparent text-ink-soft hover:text-ink'}`
+                    }
+                  >
+                    <span className={`h-2 w-2 rounded-full ${markStyle[mark]}`} aria-hidden />
+                    <span>
+                      {i + 1}. {s.label}
+                    </span>
+                    <span className="sr-only">({mark === 'done' ? 'done' : mark === 'stale' ? 'out of date' : 'not yet'})</span>
+                  </NavLink>
+                </li>
+              );
+            })}
+          </ol>
+        </nav>
+        <StaleBanner status={status} />
+        {body}
       </div>
-      {job.status !== 'idle' ? (
-        <section className="rounded-lg bg-paper p-4" aria-live="polite">
-          <h2 className="mb-2 font-semibold">
-            {job.status === 'running' ? 'Writing the script…' : job.status === 'done' ? 'Script ready' : 'The agent stopped'}
-          </h2>
-          {job.logs.map((l, i) => (
-            <p key={i} className="whitespace-pre-wrap text-[15px]">
-              {l}
-            </p>
-          ))}
-          {job.error ? <p className="font-semibold text-sindoor">{job.error}</p> : null}
-        </section>
-      ) : null}
-      {detail?.reel.lines.length ? (
-        <ol className="flex flex-col gap-2">
-          {detail.reel.lines.map((l) => (
-            <li key={l.id} className="rounded-md bg-paper px-4 py-2">
-              <div className="font-semibold">{l.caption}</div>
-              <div className="text-ink-soft">{l.spoken}</div>
-            </li>
-          ))}
-        </ol>
-      ) : null}
+      <div className="sticky top-8">
+        <Preview props={props} />
+      </div>
     </div>
   );
 }

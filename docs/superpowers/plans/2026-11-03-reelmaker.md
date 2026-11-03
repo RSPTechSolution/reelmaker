@@ -6,7 +6,7 @@
 
 **Architecture:** npm-workspaces monorepo. `shared` (zod schema + timing helpers) is used by `server` (Fastify, file storage, job runner with SSE, Python bridge, Remotion renderer, Claude Code runner), `video` (Remotion composition + blocks) and `web` (React UI embedding `@remotion/player` with the same composition). A long-running Python worker (`py/`) does TTS, transcription, alignment and loudness over JSON lines.
 
-**Tech Stack:** Node 22.18+ (TypeScript runs via Node's built-in type stripping — no tsx/ts-node; erasable-only TS syntax: no enums/namespaces/parameter properties), TypeScript 5+ (+ `@types/node`, added 2026-11-03 with owner OK), Fastify 5 (+ `@fastify/static` for `/files/`, `@fastify/multipart` for the voice upload — added 2026-11-03 with owner OK), zod **4.6.7 exact** (changed from zod 3 on 2026-11-03 with owner OK: Remotion 4.0.540 requires zod 4.6.7, and zod < 4.6.6 has advisory GHSA-mrhx-c7xc-m3w5), Vite 5 (+ `@vitejs/plugin-react`) + React 18 (+ `@types/react`, `@types/react-dom` 18 — added 2026-11-03 with owner OK) + Tailwind 3 (+ `postcss`, `autoprefixer`) + Tailwind 3 + React Router 6, Remotion 4 (`remotion`, `@remotion/cli`, `@remotion/player`, `@remotion/bundler`, `@remotion/renderer`, `@remotion/google-fonts` — **all pinned to the same exact version**), sharp, vitest; Python 3.12, `kokoro`, `soundfile`, `faster-whisper`, `numpy`, pytest.
+**Tech Stack:** Node 22.18+ (TypeScript runs via Node's built-in type stripping — no tsx/ts-node; erasable-only TS syntax: no enums/namespaces/parameter properties), TypeScript 5+ (+ `@types/node`, added 2026-11-03 with owner OK), Fastify 5 (+ `@fastify/static` for `/files/`, `@fastify/multipart` for the voice upload — added 2026-11-03 with owner OK), zod **4.6.7 exact** (changed from zod 3 on 2026-11-03 with owner OK: Remotion 4.0.540 requires zod 4.6.7, and zod < 4.6.6 has advisory GHSA-mrhx-c7xc-m3w5), Vite 5 (+ `@vitejs/plugin-react`; tests: `jsdom`, `@testing-library/react`, `@testing-library/dom` — owner OK 2026-11-03) + React 18 (+ `@types/react`, `@types/react-dom` 18 — added 2026-11-03 with owner OK) + Tailwind 3 (+ `postcss`, `autoprefixer`) + Tailwind 3 + React Router 6, Remotion 4 (`remotion`, `@remotion/cli`, `@remotion/player`, `@remotion/bundler`, `@remotion/renderer`, `@remotion/google-fonts` — **all pinned to the same exact version**), sharp, vitest; Python 3.12, `kokoro`, `soundfile`, `faster-whisper`, `numpy`, pytest.
 
 **Spec:** `docs/superpowers/specs/2026-11-03-reelmaker-design.md`
 
@@ -254,13 +254,14 @@
 - ScriptStep: table of lines (caption input, spoken input, live word counts, red if unequal), add/remove/reorder lines, Save (`PUT`), "Ask agent" box → `agent script` with instruction. Shows estimated duration (total words / 2.3).
 - VoiceStep: voice select (4 voices), speed slider 0.8–1.3, "Generate all", per-line ▶ play (`/files/<id>/lines/<lineId>.wav`) and ↻ regenerate (`only:[lineId]`), upload own recording, total duration with > 60 s warning.
 - CaptionsStep: "Sync captions" → timing job; report (matched %, filled %, red banner < 70 %), word list with filled words highlighted and clickable to play from `start`; keyword toggles (writes `reel.keywords`).
+- Built 2026-11-03: component tests use `jsdom` + `@testing-library/react` (+ peer `@testing-library/dom`), owner-approved; React 18.3.1 is declared at the repo root and in the server so Remotion's root-level packages don't pull React 19 (it did: two Reacts); Vite `resolve.dedupe` react/react-dom/remotion. `ScriptStep` takes `{reel, onSave, agent}` (agent panel slot). `useJobRunner(onFinish)` = start job + follow + reload once. VoiceStep saves changed voice/speed before generating. CaptionsStep: click a word to hear it, ★ toggles a keyword (saved immediately).
 - AgentChat: reusable panel — input, streamed log lines, disabled while job running.
 
-- [ ] **Step 1: Failing test:** `ScriptStep flags word-count mismatch and disables Save`.
-- [ ] **Step 2:** Run → FAIL.
-- [ ] **Step 3:** Implement.
-- [ ] **Step 4:** PASS; manual: create reel → script → voice → captions works end-to-end on the Windows machine.
-- [ ] **Step 5:** Commit `feat(web): script, voice and captions steps`.
+- [x] **Step 1: Failing test:** `ScriptStep flags word-count mismatch and disables Save`.
+- [x] **Step 2:** Run → FAIL.
+- [x] **Step 3:** Implement.
+- [x] **Step 4:** PASS; manual: create reel → script → voice → captions works end-to-end on the Windows machine.
+- [x] **Step 5:** Commit `feat(web): script, voice and captions steps`.
 
 ### Task 12: Reel editor — Scenes, Review, Render steps
 

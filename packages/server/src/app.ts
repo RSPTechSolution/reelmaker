@@ -5,6 +5,8 @@ import Fastify, { type FastifyError, type FastifyInstance } from 'fastify';
 import { HttpError } from './errors.ts';
 import { REELS_DIR } from './paths.ts';
 import { getWorker } from './python.ts';
+import { agentRoutes } from './routes/agent.ts';
+import type { SpawnFn } from './agent/run.ts';
 import { audioRoutes, MAX_UPLOAD_BYTES, remotionFfmpegConvert, type AudioWorker, type ConvertAudio } from './routes/audio.ts';
 import { jobRoutes } from './routes/jobs.ts';
 import { reelRoutes } from './routes/reels.ts';
@@ -25,7 +27,13 @@ const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
  * 127.0.0.1:4000 / localhost:4000, the shared Python worker and Remotion's ffmpeg.
  */
 export function buildApp(
-  opts: { logger?: boolean; allowedHosts?: string[]; worker?: AudioWorker; convertAudio?: ConvertAudio } = {},
+  opts: {
+    logger?: boolean;
+    allowedHosts?: string[];
+    worker?: AudioWorker;
+    convertAudio?: ConvertAudio;
+    spawnClaude?: SpawnFn;
+  } = {},
 ): FastifyInstance {
   const app = Fastify({ logger: opts.logger ?? false });
   mkdirSync(REELS_DIR, { recursive: true });
@@ -63,6 +71,7 @@ export function buildApp(
     }),
   );
   app.register(renderRoutes);
+  app.register(agentRoutes({ spawnFn: opts.spawnClaude }));
   app.register(settingsRoutes);
   app.register(jobRoutes);
   return app;

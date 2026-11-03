@@ -8,7 +8,9 @@ def main() -> None:
     print("Loading Kokoro (Hindi)...", flush=True)
     from kokoro import KPipeline
 
-    KPipeline(lang_code="h", repo_id="hexgrad/Kokoro-82M")
+    pipeline = KPipeline(lang_code="h", repo_id="hexgrad/Kokoro-82M")
+    for voice in ("hf_alpha", "hf_beta", "hm_omega", "hm_psi"):
+        pipeline.load_voice(voice)  # downloads the voice file on first run
     print(f"  ok ({time.time() - t:.0f}s)", flush=True)
 
     t = time.time()

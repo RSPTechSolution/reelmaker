@@ -79,6 +79,18 @@ def test_worker_survives_exception_and_bad_json(tmp_path):
         w.close()
 
 
+def test_worker_registers_tts_and_timing(tmp_path):
+    w = Worker()
+    try:
+        w.read()
+        w.send({"id": "t1", "op": "tts", "args": {"lines": [{"id": "../x", "spoken": "नमस्ते"}], "voice": "hf_alpha", "speed": 1.0, "dir": str(tmp_path)}})
+        assert "invalid line id" in w.result("t1")["error"]
+        w.send({"id": "t2", "op": "timing", "args": {"dir": str(tmp_path), "words": [], "windows": None, "prompt": ""}})
+        assert "unknown op" not in w.result("t2")["error"]
+    finally:
+        w.close()
+
+
 def test_worker_utf8_roundtrip():
     w = Worker()
     try:

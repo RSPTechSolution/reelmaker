@@ -123,13 +123,13 @@
 
 **Interfaces:**
 - op `tts` args `{lines: [{id, spoken}], voice: str, speed: float, dir: str, only?: [lineId]}` → writes `dir/lines/<id>.wav` (worker rejects any line id not matching `^[A-Za-z0-9_-]{1,64}$` or equal to a Windows device name) (only the listed ids if `only`), then concatenates **all** line WAVs in order with 0.15 s silence into `dir/vo.wav`; result `{windows: [[start,end]...], duration: float}`. Emits progress per line. Uses `KPipeline(lang_code='h')` created once per worker; joins all audio chunks the generator yields for a line.
-- op `timing` args `{dir: str, words: [{i, caption, spoken, line}], windows: [[s,e]]|null, prompt: str}` → runs faster-whisper on `dir/vo.wav` (`language="hi"`, `word_timestamps=True`, `initial_prompt=prompt`, `vad_filter=False`), calls `align`, writes `dir/words.json`, runs `loudness` to `dir/loudness.json`; result = align report minus `words`.
+- op `timing` args `{dir: str, words: [{i, caption, spoken, line}], windows: [[s,e]]|null, prompt: str}` → runs faster-whisper on `dir/vo.wav` (read with soundfile and resampled to 16 kHz mono in Python, because faster-whisper 1.2.1's PyAV decoder call breaks on PyAV 19; `language="hi"`, `word_timestamps=True`, `initial_prompt=prompt`, `vad_filter=False`), calls `align`, writes `dir/words.json`, runs `loudness` to `dir/loudness.json`; result = align report minus `words`.
 
-- [ ] **Step 1: Failing smoke tests:** `test_tts_writes_vo` (2 short lines `["नमस्ते दोस्तों", "आज हम सीखेंगे"]` → `vo.wav` exists, 24000 Hz, duration ≈ sum(lines)+0.15 ±0.05, 2 windows); `test_tts_only_regenerates_listed_line` (mtime of untouched line WAV unchanged); `test_timing_end_to_end` (on the vo.wav above → `words.json` has 5 entries, `matched ≥ 3`).
-- [ ] **Step 2:** `pytest -m slow` → FAIL.
-- [ ] **Step 3:** Implement. If Kokoro raises because espeak-ng is missing, re-raise as `espeak-ng not found — install it (see README)`.
-- [ ] **Step 4:** PASS (expect ~1–2 min on CPU first run).
-- [ ] **Step 5:** Commit `feat(py): kokoro tts and whisper timing ops`.
+- [x] **Step 1: Failing smoke tests:** `test_tts_writes_vo` (2 short lines `["नमस्ते दोस्तों", "आज हम सीखेंगे"]` → `vo.wav` exists, 24000 Hz, duration ≈ sum(lines)+0.15 ±0.05, 2 windows); `test_tts_only_regenerates_listed_line` (mtime of untouched line WAV unchanged); `test_timing_end_to_end` (on the vo.wav above → `words.json` has 5 entries, `matched ≥ 3`).
+- [x] **Step 2:** `pytest -m slow` → FAIL.
+- [x] **Step 3:** Implement. If Kokoro raises because espeak-ng is missing, re-raise as `espeak-ng not found — install it (see README)`.
+- [x] **Step 4:** PASS (expect ~1–2 min on CPU first run).
+- [x] **Step 5:** Commit `feat(py): kokoro tts and whisper timing ops`.
 
 ### Task 5: Server core — storage, REST, jobs, SSE
 

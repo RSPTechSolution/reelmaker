@@ -109,11 +109,11 @@
   - returns `{"words": [WordTiming...], "matched": int, "filled": int, "filledRanges": [[i0,i1,start,end]...]}`.
 - Algorithm: normalise both sides (strip punctuation incl. `।`, NFC, lowercase); if `windows` given, align each line only against Whisper words whose midpoint is inside that window, else whole file. Use `difflib.SequenceMatcher` on normalised token lists; equal blocks → matched (take Whisper times); for each run of unmatched script words, take the gap between the previous matched end (or window start) and next matched start (or window end) and split it in proportion to `len(spoken)`; mark `filled: true`. Finally enforce monotonic `start ≤ end ≤ next.start`.
 
-- [ ] **Step 1: Failing tests:** `test_exact_match` (3 words, identical → matched 3, times copied); `test_fills_skipped_words` (Whisper missing middle word → filled 1, its start = prev end, end = next start); `test_times_are_monotonic` (random Whisper jitter with overlaps → for all k, `start[k] ≤ end[k] ≤ start[k+1]`); `test_windows_restrict_matching` (same word in two lines matches inside its own window); `test_no_whisper_words` (empty list → all filled, evenly spread over window, no exception).
-- [ ] **Step 2:** Run → FAIL.
-- [ ] **Step 3:** Implement `align`.
-- [ ] **Step 4:** PASS.
-- [ ] **Step 5:** Commit `feat(py): caption alignment with gap filling`.
+- [x] **Step 1: Failing tests:** `test_exact_match` (3 words, identical → matched 3, times copied); `test_fills_skipped_words` (Whisper missing middle word → filled 1, its start = prev end, end = next start); `test_times_are_monotonic` (random Whisper jitter with overlaps → for all k, `start[k] ≤ end[k] ≤ start[k+1]`); `test_windows_restrict_matching` (same word in two lines matches inside its own window); `test_no_whisper_words` (empty list → all filled, evenly spread over window, no exception).
+- [x] **Step 2:** Run → FAIL.
+- [x] **Step 3:** Implement `align`.
+- [x] **Step 4:** PASS.
+- [x] **Step 5:** Commit `feat(py): caption alignment with gap filling`.
 
 ### Task 4: TTS and transcription ops
 

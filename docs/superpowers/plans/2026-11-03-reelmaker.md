@@ -91,11 +91,11 @@
   - on start the worker prints `{"ready": true}`. Unknown op → `ok:false, error:"unknown op <op>"`. Exceptions never kill the loop.
 - Produces op `loudness` args `{wav: str, out: str, fps: 30}` → result `{frames: int}`; writes JSON array of floats 0–1 (per-frame RMS, normalised by the 95th percentile, clipped to 1, 2-frame moving average).
 
-- [ ] **Step 1: Failing tests:** `test_loudness_silence_is_zero` (1 s of zeros → 30 values all 0); `test_loudness_tone_is_high` (1 s 440 Hz sine at 0.5 → median > 0.8); `test_worker_unknown_op` (spawn `worker.py`, send unknown op → `ok` false, process still alive, next valid request answered).
-- [ ] **Step 2:** `py/.venv/Scripts/python -m pytest py/tests -q` → FAIL.
-- [ ] **Step 3:** Implement. Set `sys.stdout.reconfigure(encoding="utf-8")` (Windows console default is not UTF-8). `warmup.py` instantiates `KPipeline(lang_code='h')` and `WhisperModel("small", device="cpu", compute_type="int8")` once.
-- [ ] **Step 4:** Tests PASS.
-- [ ] **Step 5:** Commit `feat(py): worker protocol and loudness op`.
+- [x] **Step 1: Failing tests:** `test_loudness_silence_is_zero` (1 s of zeros → 30 values all 0); `test_loudness_tone_is_high` (1 s 440 Hz sine at 0.5 → median > 0.8); `test_worker_unknown_op` (spawn `worker.py`, send unknown op → `ok` false, process still alive, next valid request answered).
+- [x] **Step 2:** `py/.venv/Scripts/python -m pytest py/tests -q` → FAIL.
+- [x] **Step 3:** Implement. Set `sys.stdout.reconfigure(encoding="utf-8")` (Windows console default is not UTF-8). `warmup.py` instantiates `KPipeline(lang_code='h')` and `WhisperModel("small", device="cpu", compute_type="int8")` once.
+- [x] **Step 4:** Tests PASS.
+- [x] **Step 5:** Commit `feat(py): worker protocol and loudness op`.
 
 ### Task 3: Alignment (pure function)
 

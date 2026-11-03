@@ -1,8 +1,11 @@
 import { mkdirSync } from 'node:fs';
+import fastifyMultipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
 import Fastify, { type FastifyError, type FastifyInstance } from 'fastify';
 import { HttpError } from './errors.ts';
 import { REELS_DIR } from './paths.ts';
+import { getWorker } from './python.ts';
+import { audioRoutes, MAX_UPLOAD_BYTES, remotionFfmpegConvert, type AudioWorker, type ConvertAudio } from './routes/audio.ts';
 import { jobRoutes } from './routes/jobs.ts';
 import { reelRoutes } from './routes/reels.ts';
 import { settingsRoutes } from './routes/settings.ts';
@@ -17,9 +20,12 @@ const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 /**
  * Builds the Fastify app without listening (tests use app.inject).
- * `allowedHosts` exists for tests; the real server uses 127.0.0.1:4000 / localhost:4000.
+ * `allowedHosts`, `worker` and `convertAudio` exist for tests; the real server uses
+ * 127.0.0.1:4000 / localhost:4000, the shared Python worker and Remotion's ffmpeg.
  */
-export function buildApp(opts: { logger?: boolean; allowedHosts?: string[] } = {}): FastifyInstance {
+export function buildApp(
+  opts: { logger?: boolean; allowedHosts?: string[]; worker?: AudioWorker; convertAudio?: ConvertAudio } = {},
+): FastifyInstance {
   const app = Fastify({ logger: opts.logger ?? false });
   mkdirSync(REELS_DIR, { recursive: true });
   const allowedHosts = new Set((opts.allowedHosts ?? DEFAULT_HOSTS).map((h) => h.toLowerCase()));
@@ -46,7 +52,15 @@ export function buildApp(opts: { logger?: boolean; allowedHosts?: string[] } = {
 
   // Generated media (wav, mp4, png). Range requests are supported, which audio seeking needs.
   app.register(fastifyStatic, { root: REELS_DIR, prefix: '/files/', decorateReply: false });
+  app.register(fastifyMultipart, { limits: { fileSize: MAX_UPLOAD_BYTES, files: 1 } });
   app.register(reelRoutes);
+  app.register(
+    audioRoutes({
+      // getWorker() is lazy: the Python process starts on the first voice/timing job.
+      worker: opts.worker ?? { call: (op, args, onProgress) => getWorker().call(op, args, onProgress) },
+      convertAudio: opts.convertAudio ?? remotionFfmpegConvert,
+    }),
+  );
   app.register(settingsRoutes);
   app.register(jobRoutes);
   return app;

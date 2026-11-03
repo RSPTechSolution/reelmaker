@@ -159,14 +159,14 @@
 - `python.ts`: `class PyWorker { start(): Promise<void>; call<T>(op: string, args: object, onProgress?: (p: number, msg: string) => void): Promise<T>; stop(): void }` — spawns `py/.venv/Scripts/python.exe` (Windows) or `py/.venv/bin/python`, args `['-u', 'py/worker.py']`, `env.PYTHONIOENCODING='utf-8'`; waits for `{"ready":true}`; matches responses by id; on exit restarts once and rejects in-flight calls with the last 20 stderr lines.
 - Routes (each starts a job, returns `{jobId}`):
   - `POST /api/reels/:id/voice` body `{only?: string[]}` → `tts`, then sets `reel.hashes.voice = spokenHash(reel)`, stores windows in `data/reels/<id>/windows.json`.
-  - `POST /api/reels/:id/voice/upload` (multipart wav/mp3/m4a, ≤ 50 MB) → saves as `vo.wav` (convert via ffmpeg bundled in Remotion: `npx remotion ffmpeg -i in -ar 24000 -ac 1 vo.wav`), sets `voice.engine='upload'`, deletes `windows.json`.
+  - `POST /api/reels/:id/voice/upload` (multipart wav/mp3/m4a, ≤ 50 MB) → saves as `vo.wav` (convert via ffmpeg bundled in Remotion: `npx remotion ffmpeg -i in -ar 24000 -ac 1 vo.wav`), sets `voice.engine='upload'`, deletes `windows.json`, sets `hashes.voice = spokenHash(reel)` so later script edits mark the recording stale. `@remotion/cli` (exact Remotion version) is a server dependency for this; spawned as `node <@remotion/cli>/remotion-cli.js ffmpeg …` (no `npx` on Windows). Every voice/upload job deletes `hashes.timing` (new audio ⇒ re-sync captions) and stores the hash of the text it actually voiced, not of edits made while it ran.
   - `POST /api/reels/:id/timing` → `timing` with `prompt` = all spoken text joined, sets `hashes.timing = spokenHash(reel)`, stores report in `report.json`. Refuses (409 `voice is stale`) if voice is stale.
 
-- [ ] **Step 1: Failing tests:** `call resolves by id with progress`; `worker crash rejects in-flight call with stderr tail`; `timing refuses when voice stale`; `voice job sets voice hash`.
-- [ ] **Step 2:** Run → FAIL.
-- [ ] **Step 3:** Implement; worker is started lazily on first call and shared.
-- [ ] **Step 4:** PASS.
-- [ ] **Step 5:** Commit `feat(server): python bridge, voice and timing jobs`.
+- [x] **Step 1: Failing tests:** `call resolves by id with progress`; `worker crash rejects in-flight call with stderr tail`; `timing refuses when voice stale`; `voice job sets voice hash`.
+- [x] **Step 2:** Run → FAIL.
+- [x] **Step 3:** Implement; worker is started lazily on first call and shared.
+- [x] **Step 4:** PASS.
+- [x] **Step 5:** Commit `feat(server): python bridge, voice and timing jobs`.
 
 ### Task 7: Video engine (Remotion composition + blocks)
 

@@ -7,11 +7,15 @@ export function splitWords(text: string): string[] {
 
 /**
  * Ids end up in file paths (lines/<id>.wav, data/reels/<id>/) and the agent can edit them,
- * so only letters, digits, _ and - are allowed.
+ * so only letters, digits, _ and - are allowed, and never a Windows device name (CON, NUL, COM1…).
  */
+export const SAFE_ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
+export const WINDOWS_RESERVED_RE = /^(con|prn|aux|nul|com[0-9]|lpt[0-9])$/i;
+
 export const SafeId = z
   .string()
-  .regex(/^[A-Za-z0-9_-]{1,64}$/, 'id must be 1–64 characters: letters, digits, _ or -');
+  .regex(SAFE_ID_RE, 'id must be 1–64 characters: letters, digits, _ or -')
+  .refine((id) => !WINDOWS_RESERVED_RE.test(id), 'id cannot be a Windows device name (CON, NUL, COM1, …)');
 
 export const Line = z
   .object({

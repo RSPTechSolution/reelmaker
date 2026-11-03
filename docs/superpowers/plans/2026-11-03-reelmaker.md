@@ -60,7 +60,7 @@
 
 **Interfaces:**
 - Produces (zod schemas + inferred types):
-  - `SafeId` = string matching `/^[A-Za-z0-9_-]{1,64}$/` — used for reel, line and cue ids because ids become file paths (added 2026-11-03 with owner OK after a security review). `Reel` also rejects duplicate line ids and duplicate cue ids.
+  - `SafeId` = string matching `/^[A-Za-z0-9_-]{1,64}$/` and not a Windows device name (`con|prn|aux|nul|com0-9|lpt0-9`, case-insensitive) — used for reel, line and cue ids because ids become file paths (added 2026-11-03 with owner OK after a security review). `Reel` also rejects duplicate line ids and duplicate cue ids.
   - `Line = {id: SafeId, caption: string, spoken: string}` — refinement: word counts equal (error message `line <id>: caption has X words, spoken has Y`).
   - `Block` discriminated on `type`: `title{text}`, `card{title, body?, icon?}`, `bigNumber{to: number, prefix?, suffix?}`, `sticker{text}`, `list{items: string[] (1–5)}`, `expression{expression: 'happy'|'thinking'|'surprised'|'wink'}`.
   - `Cue = {id, atWord: number (int ≥0), untilWord?: number, block: Block}`.
@@ -122,7 +122,7 @@
 - Test: `py/tests/test_tts_smoke.py`, `py/tests/test_transcribe_smoke.py` (marked `@pytest.mark.slow`)
 
 **Interfaces:**
-- op `tts` args `{lines: [{id, spoken}], voice: str, speed: float, dir: str, only?: [lineId]}` → writes `dir/lines/<id>.wav` (worker rejects any line id not matching `^[A-Za-z0-9_-]{1,64}$`) (only the listed ids if `only`), then concatenates **all** line WAVs in order with 0.15 s silence into `dir/vo.wav`; result `{windows: [[start,end]...], duration: float}`. Emits progress per line. Uses `KPipeline(lang_code='h')` created once per worker; joins all audio chunks the generator yields for a line.
+- op `tts` args `{lines: [{id, spoken}], voice: str, speed: float, dir: str, only?: [lineId]}` → writes `dir/lines/<id>.wav` (worker rejects any line id not matching `^[A-Za-z0-9_-]{1,64}$` or equal to a Windows device name) (only the listed ids if `only`), then concatenates **all** line WAVs in order with 0.15 s silence into `dir/vo.wav`; result `{windows: [[start,end]...], duration: float}`. Emits progress per line. Uses `KPipeline(lang_code='h')` created once per worker; joins all audio chunks the generator yields for a line.
 - op `timing` args `{dir: str, words: [{i, caption, spoken, line}], windows: [[s,e]]|null, prompt: str}` → runs faster-whisper on `dir/vo.wav` (`language="hi"`, `word_timestamps=True`, `initial_prompt=prompt`, `vad_filter=False`), calls `align`, writes `dir/words.json`, runs `loudness` to `dir/loudness.json`; result = align report minus `words`.
 
 - [ ] **Step 1: Failing smoke tests:** `test_tts_writes_vo` (2 short lines `["नमस्ते दोस्तों", "आज हम सीखेंगे"]` → `vo.wav` exists, 24000 Hz, duration ≈ sum(lines)+0.15 ±0.05, 2 windows); `test_tts_only_regenerates_listed_line` (mtime of untouched line WAV unchanged); `test_timing_end_to_end` (on the vo.wav above → `words.json` has 5 entries, `matched ≥ 3`).

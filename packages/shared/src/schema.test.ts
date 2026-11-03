@@ -64,7 +64,7 @@ describe('Reel', () => {
 });
 
 describe('ids are safe for file paths', () => {
-  it.each(['../../x', 'a/b', 'a\\b', 'C:x', 'l 1', '.', '', 'x'.repeat(65)])(
+  it.each(['../../x', 'a/b', 'a\\b', 'C:x', 'l 1', '.', '', 'x'.repeat(65), 'CON', 'nul', 'Aux', 'prn', 'COM1', 'lpt9', 'com0'])(
     'rejects unsafe line id %j',
     (id) => {
       expect(Line.safeParse({ id, caption: 'a', spoken: 'अ' }).success).toBe(false);

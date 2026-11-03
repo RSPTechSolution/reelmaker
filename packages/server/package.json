@@ -1,0 +1,17 @@
+{
+  "name": "@reelmaker/server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/main.ts",
+    "start": "node src/main.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@fastify/static": "^10.1.8",
+    "@reelmaker/shared": "*",
+    "fastify": "^5.12.8",
+    "zod": "^3.25.76"
+  }
+}

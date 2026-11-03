@@ -6,7 +6,7 @@
 
 **Architecture:** npm-workspaces monorepo. `shared` (zod schema + timing helpers) is used by `server` (Fastify, file storage, job runner with SSE, Python bridge, Remotion renderer, Claude Code runner), `video` (Remotion composition + blocks) and `web` (React UI embedding `@remotion/player` with the same composition). A long-running Python worker (`py/`) does TTS, transcription, alignment and loudness over JSON lines.
 
-**Tech Stack:** Node 22.18+ (TypeScript runs via Node's built-in type stripping — no tsx/ts-node; erasable-only TS syntax: no enums/namespaces/parameter properties), TypeScript 5+ (+ `@types/node`, added 2026-11-03 with owner OK), Fastify 5, zod 3, Vite 5 + React 18 + Tailwind 3 + React Router 6, Remotion 4 (`remotion`, `@remotion/cli`, `@remotion/player`, `@remotion/bundler`, `@remotion/renderer`, `@remotion/google-fonts` — **all pinned to the same exact version**), sharp, vitest; Python 3.12, `kokoro`, `soundfile`, `faster-whisper`, `numpy`, pytest.
+**Tech Stack:** Node 22.18+ (TypeScript runs via Node's built-in type stripping — no tsx/ts-node; erasable-only TS syntax: no enums/namespaces/parameter properties), TypeScript 5+ (+ `@types/node`, added 2026-11-03 with owner OK), Fastify 5 (+ `@fastify/static` for `/files/`, `@fastify/multipart` for the voice upload — added 2026-11-03 with owner OK), zod 3, Vite 5 + React 18 + Tailwind 3 + React Router 6, Remotion 4 (`remotion`, `@remotion/cli`, `@remotion/player`, `@remotion/bundler`, `@remotion/renderer`, `@remotion/google-fonts` — **all pinned to the same exact version**), sharp, vitest; Python 3.12, `kokoro`, `soundfile`, `faster-whisper`, `numpy`, pytest.
 
 **Spec:** `docs/superpowers/specs/2026-11-03-reelmaker-design.md`
 
@@ -143,11 +143,11 @@
 - `jobs.ts`: `startJob(kind: string, reelId: string, fn: (ctx: {progress(p: number, msg?: string): void, log(text: string): void}) => Promise<unknown>): Job`; `getJob(id)`; `subscribe(id, listener)`. One running job per reel (second → HTTP 409).
 - Routes: `POST /api/reels`, `GET /api/reels`, `GET /api/reels/:id` (→ `{reel, status, words?, report?}`), `PUT /api/reels/:id` (400 with zod issues on invalid), `GET/PUT /api/brand`, `GET/PUT /api/mascot`, `GET /api/jobs/:id/events` (SSE: `progress`, `log`, `done`, `error` events), static `/files/` → `DATA_DIR/reels`.
 
-- [ ] **Step 1: Failing tests** (use `app.inject`, temp `REEL_DATA_DIR`): `creates and lists a reel`; `PUT rejects word-count mismatch with 400`; `saveReel is atomic` (no `.tmp` left behind); `marks voice stale when spoken text changes` (save hashes.voice, edit spoken → status.voice `stale`; edit caption only → `ok`); `second job on same reel returns 409`; `SSE stream ends with done`.
-- [ ] **Step 2:** `npx vitest run packages/server` → FAIL.
-- [ ] **Step 3:** Implement.
-- [ ] **Step 4:** PASS.
-- [ ] **Step 5:** Commit `feat(server): storage, REST API and job runner`.
+- [x] **Step 1: Failing tests** (use `app.inject`, temp `REEL_DATA_DIR`): `creates and lists a reel`; `PUT rejects word-count mismatch with 400`; `saveReel is atomic` (no `.tmp` left behind); `marks voice stale when spoken text changes` (save hashes.voice, edit spoken → status.voice `stale`; edit caption only → `ok`); `second job on same reel returns 409`; `SSE stream ends with done`.
+- [x] **Step 2:** `npx vitest run packages/server` → FAIL.
+- [x] **Step 3:** Implement.
+- [x] **Step 4:** PASS.
+- [x] **Step 5:** Commit `feat(server): storage, REST API and job runner`.
 
 ### Task 6: Python bridge + voice/timing endpoints
 

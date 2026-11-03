@@ -28,7 +28,7 @@ export const Line = z
     const s = splitWords(line.spoken).length;
     if (c !== s) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: 'custom',
         path: ['spoken'],
         message: `line ${line.id}: caption has ${c} words, spoken has ${s}`,
       });
@@ -107,7 +107,7 @@ export const Reel = z
       ids.forEach((id, k) => {
         if (seen.has(id)) {
           ctx.addIssue({
-            code: z.ZodIssueCode.custom,
+            code: 'custom',
             path: [kind === 'line' ? 'lines' : 'cues', k, 'id'],
             message: `duplicate ${kind} id ${id}`,
           });
@@ -122,7 +122,7 @@ export const Reel = z
     reel.cues.forEach((cue, k) => {
       if (cue.atWord >= total) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: 'custom',
           path: ['cues', k, 'atWord'],
           message: `cue ${cue.id}: atWord ${cue.atWord} is beyond the last word (script has ${total} words, last index ${total - 1})`,
         });

@@ -63,6 +63,44 @@ describe('Reel', () => {
   });
 });
 
+describe('ids are safe for file paths', () => {
+  it.each(['../../x', 'a/b', 'a\\b', 'C:x', 'l 1', '.', '', 'x'.repeat(65)])(
+    'rejects unsafe line id %j',
+    (id) => {
+      expect(Line.safeParse({ id, caption: 'a', spoken: 'अ' }).success).toBe(false);
+    },
+  );
+
+  it('accepts letters, digits, _ and -', () => {
+    expect(Line.safeParse({ id: 'l1_new-2', caption: 'a', spoken: 'अ' }).success).toBe(true);
+  });
+
+  it('rejects unsafe reel id and cue id', () => {
+    const reel = example();
+    reel.id = '..\\..\\Windows';
+    expect(Reel.safeParse(reel).success).toBe(false);
+    const reel2 = example();
+    reel2.cues[0].id = '../c1';
+    expect(Reel.safeParse(reel2).success).toBe(false);
+  });
+
+  it('rejects duplicate line ids', () => {
+    const reel = example();
+    reel.lines[1].id = reel.lines[0].id;
+    const r = Reel.safeParse(reel);
+    expect(r.success).toBe(false);
+    expect(r.error!.issues.some((i) => i.message.includes(`duplicate line id ${reel.lines[0].id}`))).toBe(true);
+  });
+
+  it('rejects duplicate cue ids', () => {
+    const reel = example();
+    reel.cues[1].id = reel.cues[0].id;
+    const r = Reel.safeParse(reel);
+    expect(r.success).toBe(false);
+    expect(r.error!.issues.some((i) => i.message.includes(`duplicate cue id ${reel.cues[0].id}`))).toBe(true);
+  });
+});
+
 describe('defaults', () => {
   it('default brand and mascot are valid', () => {
     expect(Brand.parse(defaultBrand)).toEqual(defaultBrand);

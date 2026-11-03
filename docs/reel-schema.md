@@ -19,6 +19,8 @@ Every reel lives in `data/reels/<id>/reel.json`. The server validates it with zo
 | `hashes` | `{voice?: string, timing?: string}` | Set by the server. **Never edit.** |
 | `createdAt`, `updatedAt` | ISO date string | Set by the server. |
 
+**All ids** (reel, line, cue) may only use letters, digits, `_` and `-` (max 64 characters), and line ids and cue ids must be unique within the reel.
+
 ## Line
 
 ```

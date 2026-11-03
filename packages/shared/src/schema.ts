@@ -5,9 +5,17 @@ export function splitWords(text: string): string[] {
   return text.trim().split(/\s+/).filter(Boolean);
 }
 
+/**
+ * Ids end up in file paths (lines/<id>.wav, data/reels/<id>/) and the agent can edit them,
+ * so only letters, digits, _ and - are allowed.
+ */
+export const SafeId = z
+  .string()
+  .regex(/^[A-Za-z0-9_-]{1,64}$/, 'id must be 1–64 characters: letters, digits, _ or -');
+
 export const Line = z
   .object({
-    id: z.string().min(1),
+    id: SafeId,
     caption: z.string(),
     spoken: z.string(),
   })
@@ -44,7 +52,7 @@ export type Block = z.infer<typeof Block>;
 export type BlockType = Block['type'];
 
 export const Cue = z.object({
-  id: z.string().min(1),
+  id: SafeId,
   atWord: z.number().int().min(0),
   untilWord: z.number().int().min(0).optional(),
   block: Block,
@@ -75,7 +83,7 @@ export function totalWords(lines: { caption: string }[]): number {
 
 export const Reel = z
   .object({
-    id: z.string().min(1),
+    id: SafeId,
     title: z.string(),
     topic: z.string(),
     hook: z.string().optional(),
@@ -90,6 +98,22 @@ export const Reel = z
     updatedAt: z.string(),
   })
   .superRefine((reel, ctx) => {
+    const dupes = (kind: 'line' | 'cue', ids: string[]) => {
+      const seen = new Set<string>();
+      ids.forEach((id, k) => {
+        if (seen.has(id)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [kind === 'line' ? 'lines' : 'cues', k, 'id'],
+            message: `duplicate ${kind} id ${id}`,
+          });
+        }
+        seen.add(id);
+      });
+    };
+    dupes('line', reel.lines.map((l) => l.id));
+    dupes('cue', reel.cues.map((c) => c.id));
+
     const total = totalWords(reel.lines);
     reel.cues.forEach((cue, k) => {
       if (cue.atWord >= total) {

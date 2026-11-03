@@ -1,0 +1,22 @@
+{
+  "name": "reelmaker",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "setup": "node scripts/setup.ts",
+    "doctor": "node scripts/doctor.ts",
+    "dev": "npm run dev --workspaces --if-present",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0"
+  }
+}

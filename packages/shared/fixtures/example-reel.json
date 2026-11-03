@@ -1,0 +1,31 @@
+{
+  "id": "20261103-1300-ai-se-video",
+  "title": "AI se video kaise banaye — 3 tips",
+  "topic": "AI se video kaise banaye — 3 tips",
+  "hook": "AI se video banana ab bahut easy hai",
+  "targetSeconds": 30,
+  "lines": [
+    { "id": "l1", "caption": "AI se video banana ab bahut easy hai", "spoken": "एआई से वीडियो बनाना अब बहुत ईज़ी है" },
+    { "id": "l2", "caption": "Bas 3 simple steps follow karo", "spoken": "बस तीन सिंपल स्टेप्स फॉलो करो" },
+    { "id": "l3", "caption": "Step 1: script AI se likhwao", "spoken": "स्टेप वन: स्क्रिप्ट एआई से लिखवाओ" },
+    { "id": "l4", "caption": "Step 2: voice aur captions banao", "spoken": "स्टेप टू: वॉइस और कैप्शन्स बनाओ" },
+    { "id": "l5", "caption": "Step 3: scenes jodo aur render karo", "spoken": "स्टेप थ्री: सीन्स जोड़ो और रेंडर करो" },
+    { "id": "l6", "caption": "Follow karo aur aise aur tips pao", "spoken": "फॉलो करो और ऐसे और टिप्स पाओ" }
+  ],
+  "voice": { "engine": "kokoro", "voiceId": "hf_alpha", "speed": 1.0 },
+  "cues": [
+    { "id": "c1", "atWord": 0, "block": { "type": "title", "text": "AI se video kaise banaye" } },
+    { "id": "c2", "atWord": 9, "block": { "type": "bigNumber", "to": 3, "suffix": " steps" } },
+    { "id": "c3", "atWord": 14, "block": { "type": "card", "title": "Script", "body": "AI se likhwao", "icon": "✍️" } },
+    { "id": "c4", "atWord": 14, "block": { "type": "expression", "expression": "thinking" } },
+    { "id": "c5", "atWord": 20, "block": { "type": "card", "title": "Voice + captions", "body": "Kokoro + Whisper", "icon": "🎙️" } },
+    { "id": "c6", "atWord": 26, "block": { "type": "card", "title": "Scenes + render", "body": "Remotion se MP4", "icon": "🎬" } },
+    { "id": "c7", "atWord": 31, "untilWord": 32, "block": { "type": "sticker", "text": "Easy!" } },
+    { "id": "c8", "atWord": 33, "block": { "type": "list", "items": ["Script", "Voice", "Scenes"] } },
+    { "id": "c9", "atWord": 33, "block": { "type": "expression", "expression": "wink" } }
+  ],
+  "keywords": ["AI", "3", "script", "voice", "render"],
+  "hashes": {},
+  "createdAt": "2026-11-03T13:00:00.000Z",
+  "updatedAt": "2026-11-03T13:00:00.000Z"
+}

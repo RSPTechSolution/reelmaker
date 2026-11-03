@@ -70,11 +70,11 @@
   - `ReelProps = {reel: Reel, words: WordTiming[], loudness: number[], brand: Brand, mascot: MascotConfig, audioSrc: string|null, debugSafeZones?: boolean}`.
 - Produces (functions): `FPS = 30`, `WIDTH = 1080`, `HEIGHT = 1920`, `SAFE = {top:220,bottom:380,right:120,left:60}`; `wordFrame(words: WordTiming[], i: number, fallbackSec: number): number`; `durationInFrames(words: WordTiming[]): number` (= ceil((lastEnd + 0.8 + 1.5) × 30), min 90); `spokenHash(reel: Reel): string` (sha1 of lines' spoken + voice settings); `chunkWords(words, perChunk = 4): WordTiming[][]`.
 
-- [ ] **Step 1: Write failing tests:** `rejects word-count mismatch` (caption "AI se video" vs spoken "एआई से" → error message contains `caption has 3 words, spoken has 2`); `accepts valid example` (parse the example from `docs/reel-schema.md` saved as `fixtures/example-reel.json`); `rejects cue beyond last word`; `wordFrame uses fallback when index missing` (→ fallbackSec×30); `durationInFrames adds tail` (last end 10.0 s → 369); `spokenHash changes when spoken text changes but not when caption changes`; `chunkWords splits 10 words into 4,4,2`.
-- [ ] **Step 2:** `npx vitest run packages/shared` → FAIL.
-- [ ] **Step 3:** Implement schemas/helpers; `defaults.ts` exports `defaultBrand` (bg `#F5F5F2`, surface `#FFFFFF`, text `#14161A`, accent `#2B6CF6`, accent2 `#12B886`, font `Baloo 2`, radius 32, handle `@yourhandle`) and `defaultMascot` (body `#FF8A3D`, face `#1FD1E0`, accent `#FFD23F`, signature `antenna`).
-- [ ] **Step 4:** Tests PASS.
-- [ ] **Step 5:** Commit `feat(shared): reel schema and timing helpers`.
+- [x] **Step 1: Write failing tests:** `rejects word-count mismatch` (caption "AI se video" vs spoken "एआई से" → error message contains `caption has 3 words, spoken has 2`); `accepts valid example` (parse the example from `docs/reel-schema.md` saved as `fixtures/example-reel.json`); `rejects cue beyond last word`; `wordFrame uses fallback when index missing` (→ fallbackSec×30); `durationInFrames adds tail` (last end 10.0 s → 369); `spokenHash changes when spoken text changes but not when caption changes`; `chunkWords splits 10 words into 4,4,2`.
+- [x] **Step 2:** `npx vitest run packages/shared` → FAIL.
+- [x] **Step 3:** Implement schemas/helpers; `defaults.ts` exports `defaultBrand` (bg `#F5F5F2`, surface `#FFFFFF`, text `#14161A`, accent `#2B6CF6`, accent2 `#12B886`, font `Baloo 2`, radius 32, handle `@yourhandle`) and `defaultMascot` (body `#FF8A3D`, face `#1FD1E0`, accent `#FFD23F`, signature `antenna`).
+- [x] **Step 4:** Tests PASS.
+- [x] **Step 5:** Commit `feat(shared): reel schema and timing helpers`.
 
 ### Task 2: Python worker protocol + loudness
 

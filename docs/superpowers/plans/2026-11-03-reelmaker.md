@@ -195,13 +195,14 @@
 
 **Interfaces:**
 - `render.ts`: `getServeUrl(): Promise<string>` (bundles `packages/video/src/index.ts` once with `@remotion/bundler`, cached; rebundle when `?rebundle=1`); `buildProps(id): Promise<ReelProps>` (reads reel, words, loudness, brand, mascot; `audioSrc = http://127.0.0.1:4000/files/<id>/vo.wav`); `renderReel(id, onProgress)` → `out/reel.mp4` via `renderMedia({codec:'h264'})`; `renderCover(id)` → `out/cover.png` at `reel.coverFrame ?? wordFrame(words, firstCue.atWord, 0) + 10`; `contactFrames(total: number, n = 9): number[]` (evenly spaced, excluding last 10 frames); `renderContactSheet(id, debugSafeZones: boolean)` → 9 stills at 360×640 combined with `sharp` into `out/contact.png` (3×3, 1080×1920, frame number label not required).
+- Built 2026-11-03: server keeps its own `REEL_COMPOSITION_ID = 'Reel'` (plain Node cannot import the video package's .tsx; a test checks it matches); extra exports `renderMp4(props, out, onProgress)` (used by the slow test) and `coverFrame(reel, words, total)`; bundler/renderer/sharp imported lazily; `?rebundle=1` on both routes; slow test runs with `SLOW=1`.
 - Routes: `POST /api/reels/:id/contact-sheet` `{debugSafeZones?: boolean}`, `POST /api/reels/:id/render` → jobs. Both 409 if timing missing or stale.
 
-- [ ] **Step 1: Failing tests:** `contactFrames returns 9 increasing frames within range` (total 900 → first 0, last ≤ 889); `buildProps fails clearly without words.json` (error `run Captions step first`); slow test `renders a 3-second demo mp4` (fixture props trimmed to 90 frames → file > 10 KB).
-- [ ] **Step 2:** Run → FAIL.
-- [ ] **Step 3:** Implement. Call `ensureBrowser()` from `@remotion/renderer` before first render (downloads Chrome Headless Shell on first run).
-- [ ] **Step 4:** PASS.
-- [ ] **Step 5:** Commit `feat(server): render mp4, cover and contact sheet`.
+- [x] **Step 1: Failing tests:** `contactFrames returns 9 increasing frames within range` (total 900 → first 0, last ≤ 889); `buildProps fails clearly without words.json` (error `run Captions step first`); slow test `renders a 3-second demo mp4` (fixture props trimmed to 90 frames → file > 10 KB).
+- [x] **Step 2:** Run → FAIL.
+- [x] **Step 3:** Implement. Call `ensureBrowser()` from `@remotion/renderer` before first render (downloads Chrome Headless Shell on first run).
+- [x] **Step 4:** PASS.
+- [x] **Step 5:** Commit `feat(server): render mp4, cover and contact sheet`.
 
 ### Task 9: Agent runner (Claude Code headless)
 

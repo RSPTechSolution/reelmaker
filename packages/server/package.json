@@ -12,8 +12,11 @@
     "@fastify/multipart": "10.1.7",
     "@fastify/static": "^10.1.8",
     "@reelmaker/shared": "*",
+    "@remotion/bundler": "4.0.540",
     "@remotion/cli": "4.0.540",
+    "@remotion/renderer": "4.0.540",
     "fastify": "^5.12.8",
+    "sharp": "0.35.5",
     "zod": "4.6.7"
   }
 }

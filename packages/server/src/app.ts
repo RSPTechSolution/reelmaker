@@ -8,6 +8,7 @@ import { getWorker } from './python.ts';
 import { audioRoutes, MAX_UPLOAD_BYTES, remotionFfmpegConvert, type AudioWorker, type ConvertAudio } from './routes/audio.ts';
 import { jobRoutes } from './routes/jobs.ts';
 import { reelRoutes } from './routes/reels.ts';
+import { renderRoutes } from './routes/render.ts';
 import { settingsRoutes } from './routes/settings.ts';
 
 export const PORT = 4000;
@@ -61,6 +62,7 @@ export function buildApp(
       convertAudio: opts.convertAudio ?? remotionFfmpegConvert,
     }),
   );
+  app.register(renderRoutes);
   app.register(settingsRoutes);
   app.register(jobRoutes);
   return app;

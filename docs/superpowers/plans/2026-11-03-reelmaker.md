@@ -6,7 +6,7 @@
 
 **Architecture:** npm-workspaces monorepo. `shared` (zod schema + timing helpers) is used by `server` (Fastify, file storage, job runner with SSE, Python bridge, Remotion renderer, Claude Code runner), `video` (Remotion composition + blocks) and `web` (React UI embedding `@remotion/player` with the same composition). A long-running Python worker (`py/`) does TTS, transcription, alignment and loudness over JSON lines.
 
-**Tech Stack:** Node 22.18+ (TypeScript runs via Node's built-in type stripping — no tsx/ts-node; erasable-only TS syntax: no enums/namespaces/parameter properties), TypeScript 5+ (+ `@types/node`, added 2026-11-03 with owner OK), Fastify 5 (+ `@fastify/static` for `/files/`, `@fastify/multipart` for the voice upload — added 2026-11-03 with owner OK), zod **4.6.7 exact** (changed from zod 3 on 2026-11-03 with owner OK: Remotion 4.0.540 requires zod 4.6.7, and zod < 4.6.6 has advisory GHSA-mrhx-c7xc-m3w5), Vite 5 + React 18 (+ `@types/react`, `@types/react-dom` 18 — added 2026-11-03 with owner OK) + Tailwind 3 + React Router 6, Remotion 4 (`remotion`, `@remotion/cli`, `@remotion/player`, `@remotion/bundler`, `@remotion/renderer`, `@remotion/google-fonts` — **all pinned to the same exact version**), sharp, vitest; Python 3.12, `kokoro`, `soundfile`, `faster-whisper`, `numpy`, pytest.
+**Tech Stack:** Node 22.18+ (TypeScript runs via Node's built-in type stripping — no tsx/ts-node; erasable-only TS syntax: no enums/namespaces/parameter properties), TypeScript 5+ (+ `@types/node`, added 2026-11-03 with owner OK), Fastify 5 (+ `@fastify/static` for `/files/`, `@fastify/multipart` for the voice upload — added 2026-11-03 with owner OK), zod **4.6.7 exact** (changed from zod 3 on 2026-11-03 with owner OK: Remotion 4.0.540 requires zod 4.6.7, and zod < 4.6.6 has advisory GHSA-mrhx-c7xc-m3w5), Vite 5 (+ `@vitejs/plugin-react`) + React 18 (+ `@types/react`, `@types/react-dom` 18 — added 2026-11-03 with owner OK) + Tailwind 3 (+ `postcss`, `autoprefixer`) + Tailwind 3 + React Router 6, Remotion 4 (`remotion`, `@remotion/cli`, `@remotion/player`, `@remotion/bundler`, `@remotion/renderer`, `@remotion/google-fonts` — **all pinned to the same exact version**), sharp, vitest; Python 3.12, `kokoro`, `soundfile`, `faster-whisper`, `numpy`, pytest.
 
 **Spec:** `docs/superpowers/specs/2026-11-03-reelmaker-design.md`
 
@@ -232,16 +232,17 @@
 
 **Interfaces:**
 - `api.ts`: typed fetch wrappers for every route in Tasks 5–9 (throws `ApiError{status, message, issues?}`).
+- Built 2026-11-03: `npm run dev` = `node scripts/dev.ts` (owner chose a small script over the `concurrently` package): starts `node --watch-path=src --watch-path=../shared/src src/main.ts` and Vite via node (no .cmd shims), prefixes output, stops both together. `useJob` is a thin hook over a `JobStream` store (tested with a fake EventSource; no DOM test library); it closes the EventSource after `done`/`error` (else it reconnects and replays) and tells a dropped connection apart from a job `error` event. `ReelEditor.tsx` is a minimal shell (title, step track, agent log, lines) until Task 11. UI font: Nirmala UI (ships with Windows, Roman + Devanagari).
 - `useJob(jobId: string | null): {status: 'idle'|'running'|'done'|'error', progress: number, message?: string, logs: string[], error?: string}` over `EventSource('/api/jobs/<id>/events')`.
 - `Preview`: `@remotion/player` `<Player component={Reel} inputProps={props} durationInFrames compositionWidth={1080} compositionHeight={1920} fps={30} controls style={{width: 360}} />` with a "Safe zones" toggle.
 - Library: list cards (title, updated, status badges), "New reel" form (topic, hook, target seconds) → create → run `agent script` → navigate to `/reels/<id>/script`.
 - Brand: form for `Brand` fields + live Preview of demo props. Mascot: colour pickers + signature select + 4-expression preview grid (Mascot component from `video`).
 
-- [ ] **Step 1: Failing tests:** `useJob collects logs and finishes` (mock EventSource); `api throws ApiError with zod issues on 400`.
-- [ ] **Step 2:** `npx vitest run packages/web` → FAIL.
-- [ ] **Step 3:** Implement. Vite config: proxy `/api` and `/files` → `http://127.0.0.1:4000` with `changeOrigin: true` (the server only accepts Host `127.0.0.1:4000`/`localhost:4000`); alias `@reelmaker/video` to the workspace package.
-- [ ] **Step 4:** PASS; `npm run dev` (root script runs server + web concurrently) → Library loads, Brand changes show in the preview.
-- [ ] **Step 5:** Commit `feat(web): shell, library, brand and mascot pages`.
+- [x] **Step 1: Failing tests:** `useJob collects logs and finishes` (mock EventSource); `api throws ApiError with zod issues on 400`.
+- [x] **Step 2:** `npx vitest run packages/web` → FAIL.
+- [x] **Step 3:** Implement. Vite config: proxy `/api` and `/files` → `http://127.0.0.1:4000` with `changeOrigin: true` (the server only accepts Host `127.0.0.1:4000`/`localhost:4000`); alias `@reelmaker/video` to the workspace package.
+- [x] **Step 4:** PASS; `npm run dev` (root script runs server + web concurrently) → Library loads, Brand changes show in the preview.
+- [x] **Step 5:** Commit `feat(web): shell, library, brand and mascot pages`.
 
 ### Task 11: Reel editor — Script, Voice, Captions steps
 

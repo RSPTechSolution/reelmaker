@@ -11,7 +11,7 @@
   "scripts": {
     "setup": "node scripts/setup.ts",
     "doctor": "node scripts/doctor.ts",
-    "dev": "npm run dev --workspaces --if-present",
+    "dev": "node scripts/dev.ts",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json && npm run typecheck --workspaces --if-present"
   },

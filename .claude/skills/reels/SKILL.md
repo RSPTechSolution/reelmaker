@@ -27,8 +27,16 @@ Format of `reel.json`: see `docs/reel-schema.md`.
 - At most 1–2 `sticker`s.
 - Mascot faces: happy, thinking, surprised, wink, excited, laughing, shocked, sad. A line's mood already sets a face; add an `expression` cue on every emotional beat where the face should differ (surprised on a reveal, laughing on a joke, wink on the call to action).
 - Every cue gets an entrance `anim` (pop, slide, zoom, bounce, typewriter); vary them. Typewriter for titles, bounce for numbers and stickers, zoom for a reveal.
-- Sound effects fire automatically (whoosh on scene changes, ding when a number lands, boom on shocked lines), so place cues on the word that should carry the hit.
+- Sound effects fire automatically (swipe on scene changes, ding when a number lands, boom on shocked lines, a soft pop when coins, a rocket or a tick appear), so place cues on the word that should carry the hit.
 - Card titles ≤ 4 words, bodies ≤ 6 words. List items ≤ 3 words, at most 5 items.
 - 3–6 `keywords`: the words the viewer should remember.
+
+## Themes and drawings
+- The reel's `theme` is the owner's choice — never change it. Read it before planning scenes.
+- `scene` blocks act out the line: a stickman `pose`, up to 3 `props`, optional short `text`. Match them to the words (question → `thinking`, mistake → `facepalm` + `warning`, money → `coins`, growth → `rocket` or `chartUp`, time → `clock`). Never decorative-random.
+- Drawing-led themes (Stickman story, Animated objects, Chalkboard, Notebook doodle): most main cues are scenes. Other themes: mix scenes with cards, numbers and lists.
+- Bold typography shows no drawings: every scene needs `text` (2–4 punchy words).
+- Back-to-back scenes with poses keep the stickman on screen and change its pose — chain them for a little story (thinking → idea → celebrate).
+- Use only the pose and prop names in `docs/reel-schema.md`.
 
 ## Learned rules

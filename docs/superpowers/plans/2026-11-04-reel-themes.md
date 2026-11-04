@@ -451,7 +451,6 @@ Message: `feat(video): scene block with acted-out drawings`
 **Files:**
 - Modify: `packages/server/src/agent/prompts.ts`
 - Modify: `.claude/skills/reels/SKILL.md` (a short "Themes and drawings" section)
-- Test: `packages/server/src/agent/prompts.test.ts`
 - Test: `packages/server/src/agent/run.test.ts`
 
 **Interfaces:**
@@ -468,26 +467,26 @@ Message: `feat(video): scene block with acted-out drawings`
     - use only the listed names.
 - The `header` sentence becomes: keep "audio", "effects" and "theme" exactly as they are unless the owner asks.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 - `scenes prompt names the theme and lists every pose and prop with its meaning`: loop over `Pose.options` and `Prop.options`; the prompt contains each one with `POSE_MEANING[p]` / `PROP_MEANING[p]`.
 - `acting themes ask for mostly scene blocks`: the prompt for `theme:'stickman'` contains `most main cues`, and the one for `theme:'news'` doesn't.
 - `header keeps theme`.
 - `agent edit with an unknown prop is rejected and names the field`: a cue with `props:['money']` gives `ok:false`, and the message contains `cues.0.block.props.0`. The existing restore-on-failure test path proves the reel is rolled back.
 
-- [ ] **Step 2: Run to fail**
+- [x] **Step 2: Run to fail**
 
 Run: `npx vitest run packages/server/src/agent`
 Expected: FAIL.
 
-- [ ] **Step 3: Implement the prompt changes and the SKILL.md section**
+- [x] **Step 3: Implement the prompt changes and the SKILL.md section**
 
-- [ ] **Step 4: Run to pass**
+- [x] **Step 4: Run to pass**
 
 Run: `npm test && npm run typecheck`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Message: `feat(agent): theme-aware scenes with drawings`
 

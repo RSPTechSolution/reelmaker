@@ -5,7 +5,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { PassThrough } from 'node:stream';
 import { describe, expect, it } from 'vitest';
-import type { Reel } from '@reelmaker/shared';
+import { Pose, POSE_MEANING, Prop, PROP_MEANING, THEME_INFO, type Reel } from '@reelmaker/shared';
 import { reelDir, reelFile, REPO_ROOT } from '../paths.ts';
 import { getReel, saveReel } from '../store.ts';
 import { buildClaudeArgs, permissionPath, runAgent, type SpawnFn } from './run.ts';
@@ -128,6 +128,24 @@ describe('runAgent', () => {
     expect(calls[1].prompt).toContain('Fix reel.json.');
     expect(readFileSync(reelFile(reel.id), 'utf8')).toBe(before);
     if (!res.ok) expect(res.error).toMatch(/invalid/i);
+  });
+
+  it('agent edit with an unknown prop is rejected and names the field', async () => {
+    const reel = await savedReel();
+    const before = readFileSync(reelFile(reel.id), 'utf8');
+    const badProp = async (file: string) => {
+      const r = JSON.parse(readFileSync(file, 'utf8'));
+      r.cues = [{ id: 'c1', atWord: 0, block: { type: 'scene', pose: 'explain', props: ['money'] } }];
+      await writeFile(file, JSON.stringify(r));
+    };
+    const { spawnFn, calls } = fakeClaude([
+      { lines: [done], write: badProp },
+      { lines: [done], write: badProp },
+    ]);
+    const res = await runAgent({ reelId: reel.id, mode: 'scenes', onText: () => {}, spawnFn });
+    expect(res.ok).toBe(false);
+    expect(calls[1].prompt).toContain('cues.0.block.props.0');
+    expect(readFileSync(reelFile(reel.id), 'utf8')).toBe(before);
   });
 
   it('retries once with the zod error and accepts the fix', async () => {
@@ -309,6 +327,26 @@ describe('prompts', () => {
     const p = scenesPrompt(reel, [{ i: 9, caption: '3', spoken: 'तीन', start: 2.5, end: 2.8, filled: false }]);
     expect(p).toContain('9 3 @2.50s');
   });
+  it('scenes prompt names the theme and lists every pose and prop with its meaning', () => {
+    const p = scenesPrompt({ ...reel, theme: 'chalkboard' }, []);
+    expect(p).toContain(`Theme: ${THEME_INFO.chalkboard.label} — ${THEME_INFO.chalkboard.description}`);
+    expect(p).toContain('"type": "scene"');
+    for (const pose of Pose.options) expect(p).toContain(`${pose} — ${POSE_MEANING[pose]}`);
+    for (const prop of Prop.options) expect(p).toContain(`${prop} — ${PROP_MEANING[prop]}`);
+    expect(p).toMatch(/only the listed names/i);
+    expect(scenesPrompt(reel, [])).toContain(`Theme: ${THEME_INFO.classic.label}`);
+  });
+
+  it('acting themes ask for mostly scene blocks', () => {
+    expect(scenesPrompt({ ...reel, theme: 'stickman' }, [])).toContain('most main cues');
+    expect(scenesPrompt({ ...reel, theme: 'news' }, [])).not.toContain('most main cues');
+    expect(scenesPrompt({ ...reel, theme: 'bold' }, [])).toMatch(/scene.*need.*"text"/i);
+  });
+
+  it('every prompt tells the agent to keep the theme', () => {
+    for (const p of [scriptPrompt(reel), scenesPrompt(reel, []), reviewPrompt(reel, 'x')]) expect(p).toMatch(/"audio", "effects" and "theme"/);
+  });
+
   it('review prompt includes the instruction and the learned-rules rule', () => {
     const p = reviewPrompt(reel, 'number aur bada karo');
     expect(p).toContain('number aur bada karo');

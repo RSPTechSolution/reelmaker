@@ -1,4 +1,15 @@
-import { splitWords, totalWords, type Reel, type WordTiming } from '@reelmaker/shared';
+import {
+  Pose,
+  POSE_MEANING,
+  Prop,
+  PROP_MEANING,
+  reelTheme,
+  splitWords,
+  THEME_INFO,
+  totalWords,
+  type Reel,
+  type WordTiming,
+} from '@reelmaker/shared';
 import { reelFile } from '../paths.ts';
 import { permissionPath } from './paths.ts';
 
@@ -12,7 +23,7 @@ function header(reel: Reel): string {
     `You are editing one Hinglish reel for the owner.`,
     `First read ${SKILL_FILE} (house style and learned rules) and ${SCHEMA_DOC} (the reel.json format).`,
     `Then read and edit ONLY this file: ${file}`,
-    `Keep it valid JSON that follows ${SCHEMA_DOC}. Never change "id", "hashes", "createdAt" or "updatedAt", and keep "audio" and "effects" exactly as they are unless the owner asks to change them.`,
+    `Keep it valid JSON that follows ${SCHEMA_DOC}. Never change "id", "hashes", "createdAt" or "updatedAt", and keep "audio", "effects" and "theme" exactly as they are unless the owner asks to change them.`,
     `Reply to the owner in one or two short Hinglish sentences saying what you changed.`,
     ``,
     `Reel: "${reel.title}" — topic: ${reel.topic}${reel.hook ? ` — hook: ${reel.hook}` : ''} — target ${reel.targetSeconds} s.`,
@@ -52,6 +63,28 @@ export function scriptPrompt(reel: Reel, instruction?: string): string {
   ].join('\n');
 }
 
+/** How the drawn scene blocks should be used in this reel's theme. */
+function drawingRules(reel: Reel): string[] {
+  const theme = reelTheme(reel);
+  const info = THEME_INFO[theme];
+  const usage = info.acts
+    ? `- This theme is drawing-led: most main cues should be "scene" blocks; use title/bigNumber/list only where they are clearly better.`
+    : theme === 'bold'
+      ? `- Bold typography shows no pictures: scene blocks need "text" (2–4 punchy words); prefer title, bigNumber and scene-with-text.`
+      : `- Mix "scene" blocks with cards, numbers and lists as the content suits (a scene where an action or feeling can be shown).`;
+  return [
+    `Theme: ${info.label} — ${info.description}.`,
+    ``,
+    `Drawn scenes — a main block that acts out what is being said:`,
+    `{ "type": "scene", "pose"?: <pose>, "props"?: [up to 3 props], "text"?: <short heading> } — at least one of them.`,
+    `- Pick the pose and props from what the line says (a question → thinking, money → coins), never at random.`,
+    usage,
+    `- Use only the listed names:`,
+    `Poses: ${Pose.options.map((p) => `${p} — ${POSE_MEANING[p]}`).join('; ')}.`,
+    `Props: ${Prop.options.map((p) => `${p} — ${PROP_MEANING[p]}`).join('; ')}.`,
+  ];
+}
+
 export function scenesPrompt(reel: Reel, words: WordTiming[], instruction?: string): string {
   const wordList = words.length
     ? words.map((w) => `${w.i} ${w.caption} @${w.start.toFixed(2)}s`).join('\n')
@@ -63,7 +96,7 @@ export function scenesPrompt(reel: Reel, words: WordTiming[], instruction?: stri
     header(reel),
     ``,
     `Task: plan the scenes — replace "cues" and set "keywords".`,
-    `- A new main cue (title, card, bigNumber, list) every 2–3 seconds of speech.`,
+    `- A new main cue (title, card, bigNumber, list, scene) every 2–3 seconds of speech.`,
     `- The first cue is at word 0 and is a "title".`,
     `- Numbers in the script become "bigNumber" cues at the word of the number.`,
     `- At most 1–2 "sticker" cues.`,
@@ -71,6 +104,8 @@ export function scenesPrompt(reel: Reel, words: WordTiming[], instruction?: stri
     `- Mascot faces ("expression" cues): happy, thinking, surprised, wink, excited, laughing, shocked, sad. Change the face on every emotional beat where it differs from the line's mood (a line's mood already sets a face), e.g. surprised on a reveal, wink on the call to action.`,
     `- "keywords": 3–6 important caption words to highlight.`,
     `- atWord must be less than ${totalWords(reel.lines)} (the script's word count). Cue ids: c1, c2, …`,
+    ``,
+    ...drawingRules(reel),
     ``,
     `Words (index, caption word${words.length ? ', start time' : ''}):`,
     wordList,

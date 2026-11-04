@@ -237,9 +237,9 @@ Message: `feat(video): theme registry with contrast checks`
   - a glow `filter: drop-shadow` (static);
   - an offset shadow copy;
   - draw-on through `pathLength={1}`, `strokeDasharray=1` and `strokeDashoffset={1-progress}`.
-- Produces (`Stickman.tsx`): `Stickman: React.FC<{ skeleton: Skeleton; ink: InkStyle; face?: Expression; mouthOpen?: number; blink?: boolean; drawProgress?: number; width?: number }>`. Draws an SVG with the head circle and face, plus pose extras (the laptop for `laptop`, a "?" bubble for `thinking`, a small bulb above for `idea`). Uses no Remotion hooks.
+- Produces (`Stickman.tsx`): `Stickman: React.FC<{ skeleton: Skeleton; ink: InkStyle; pose?: Pose; face?: Expression; mouthOpen?: number; blink?: boolean; drawProgress?: number; width?: number }>`. Draws an SVG with the head circle and face, plus pose extras (the laptop for `laptop`, a "?" bubble for `thinking`, a small bulb above for `idea`). Uses no Remotion hooks.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 - `every pose stays inside the drawing box`: every joint of `poseAt(p, f)` for f in 0..60 lies within 0..300 × 0..400, with a 10 px margin.
 - `poses are distinct`: every pair differs by more than 20 px total joint distance.
@@ -248,19 +248,19 @@ Message: `feat(video): theme registry with contrast checks`
 - `Stickman renders every pose in every theme's ink`: `renderToStaticMarkup` for every `Pose` × every `resolveTheme(id, brand).ink` contains `<svg` and doesn't throw.
 - `draw-on hides lines at progress 0`: the markup has `stroke-dashoffset="1"`.
 
-- [ ] **Step 2: Run to fail**
+- [x] **Step 2: Run to fail**
 
 Run: `npx vitest run packages/video/src/drawings/stickman.test.tsx`
 Expected: FAIL.
 
-- [ ] **Step 3: Implement `skeleton.ts`, `ink.tsx` and `Stickman.tsx`**
+- [x] **Step 3: Implement `skeleton.ts`, `ink.tsx` and `Stickman.tsx`**
 
-- [ ] **Step 4: Run to pass**
+- [x] **Step 4: Run to pass**
 
 Run: `npm test && npm run typecheck`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Message: `feat(video): stickman skeleton, poses and blending`
 

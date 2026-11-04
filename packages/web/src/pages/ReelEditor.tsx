@@ -1,10 +1,11 @@
 import type { PlayerRef } from '@remotion/player';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { NavLink, useLocation, useParams } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import type { Brand, MascotConfig, Reel, ReelProps } from '@reelmaker/shared';
 import { api, fileUrl, type ReelDetail, type ReelStatus } from '../api.ts';
 import { AgentChat } from '../components/AgentChat.tsx';
 import { Preview } from '../components/Preview.tsx';
+import { StepTabs, type Mark } from '../components/StepTabs.tsx';
 import { demoProps } from '../demo.ts';
 import { CaptionsStep } from '../steps/CaptionsStep.tsx';
 import { RenderStep } from '../steps/RenderStep.tsx';
@@ -14,7 +15,6 @@ import { ScriptStep } from '../steps/ScriptStep.tsx';
 import { VoiceStep } from '../steps/VoiceStep.tsx';
 
 type StepKey = 'script' | 'voice' | 'captions' | 'scenes' | 'review' | 'render';
-type Mark = 'done' | 'stale' | 'todo';
 
 const STEPS: { key: StepKey; label: string; mark: (s: ReelStatus, reel: Reel) => Mark }[] = [
   { key: 'script', label: 'Script', mark: (s) => (s.script ? 'done' : 'todo') },
@@ -24,7 +24,6 @@ const STEPS: { key: StepKey; label: string; mark: (s: ReelStatus, reel: Reel) =>
   { key: 'review', label: 'Review', mark: () => 'todo' },
   { key: 'render', label: 'Render', mark: (s) => (s.rendered ? 'done' : 'todo') },
 ];
-const markStyle: Record<Mark, string> = { done: 'bg-leaf', stale: 'bg-sindoor', todo: 'bg-ink-faint' };
 
 function StaleBanner({ status }: { status: ReelStatus }) {
   if (status.voice === 'stale') {
@@ -144,31 +143,11 @@ export function ReelEditor() {
     <div className="flex flex-wrap items-start gap-10">
       <div className="flex min-w-[520px] max-w-3xl flex-1 flex-col gap-5">
         <h1 className="text-2xl font-bold">{reel.title}</h1>
-        <nav aria-label="Steps">
-          <ol className="flex flex-wrap gap-1 border-b border-ink-faint/60">
-            {STEPS.map((s, i) => {
-              const mark = s.mark(status, reel);
-              return (
-                <li key={s.key}>
-                  <NavLink
-                    to={`/reels/${reel.id}/${s.key}`}
-                    className={({ isActive }) =>
-                      `-mb-px flex items-center gap-2 border-b-2 px-3 py-2 text-[15px] ${isActive ? 'border-ink font-semibold' : 'border-transparent text-ink-soft hover:text-ink'}`
-                    }
-                  >
-                    <span className={`h-2 w-2 rounded-full ${markStyle[mark]}`} aria-hidden />
-                    <span>
-                      {i + 1}. {s.label}
-                    </span>
-                    <span className="sr-only">({mark === 'done' ? 'done' : mark === 'stale' ? 'out of date' : 'not yet'})</span>
-                  </NavLink>
-                </li>
-              );
-            })}
-          </ol>
-        </nav>
+        <StepTabs reelId={reel.id} active={step} steps={STEPS.map((x) => ({ key: x.key, label: x.label, mark: x.mark(status, reel) }))} />
         <StaleBanner status={status} />
-        {body}
+        <div key={step} className="step-enter">
+          {body}
+        </div>
       </div>
       <div className="sticky top-8">
         <Preview ref={player} props={props} />

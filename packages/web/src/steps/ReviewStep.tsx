@@ -34,7 +34,7 @@ export function ReviewStep({ detail, onChanged }: { detail: ReelDetail; onChange
           <p className="text-sm text-ink-soft">Sync the captions first: the review needs the timed reel.</p>
         ) : null}
       </div>
-      <JobBar job={job} running="Rendering 9 frames" />
+      <JobBar job={job} running="Rendering 9 frames" done="Contact sheet ready" />
 
       {!missing ? (
         <img

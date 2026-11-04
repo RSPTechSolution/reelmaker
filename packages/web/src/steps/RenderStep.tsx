@@ -78,7 +78,7 @@ export function RenderStep({
                 : 'Sync the captions before rendering.'}
           </p>
         </div>
-        <JobBar job={job} running="Rendering the reel" />
+        <JobBar job={job} running="Rendering the reel" done="Reel rendered" />
         {error ? <p className="text-sm font-semibold text-sindoor">{error}</p> : null}
       </section>
 

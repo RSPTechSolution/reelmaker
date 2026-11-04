@@ -54,7 +54,7 @@ export function CaptionsStep({ detail, onChanged }: { detail: ReelDetail; onChan
               : 'Matches each caption word to the exact moment it is spoken (about half a minute).'}
         </p>
       </div>
-      <JobBar job={job} running="Listening to the voice" />
+      <JobBar job={job} running="Listening to the voice" done="Captions synced" />
 
       {report && status.timing !== 'none' ? (
         <div

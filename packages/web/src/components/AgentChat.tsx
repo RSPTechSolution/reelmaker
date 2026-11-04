@@ -49,11 +49,20 @@ export function AgentChat({
       {job.status !== 'idle' ? (
         <div aria-live="polite" className="flex flex-col gap-1.5 text-[15px]">
           {job.logs.map((l, i) => (
-            <p key={i} className="whitespace-pre-wrap">
+            <p key={i} className="msg-in whitespace-pre-wrap">
               {l}
             </p>
           ))}
-          {running ? <p className="text-ink-soft">Agent is working…</p> : null}
+          {running ? (
+            <p className="flex items-center gap-2 text-ink-soft">
+              <span className="flex gap-1" aria-hidden>
+                <span className="typing-dot h-1.5 w-1.5 rounded-full bg-ink-soft" />
+                <span className="typing-dot h-1.5 w-1.5 rounded-full bg-ink-soft" />
+                <span className="typing-dot h-1.5 w-1.5 rounded-full bg-ink-soft" />
+              </span>
+              Agent is working…
+            </p>
+          ) : null}
           {job.status === 'error' ? <p className="font-semibold text-sindoor">{job.error}</p> : null}
         </div>
       ) : null}

@@ -303,6 +303,23 @@
 - [x] **Step 4:** PASS.
 - [x] **Step 5:** Commit `feat(web): scenes, review and render steps`.
 
+### Task 12b: UI/UX polish with purposeful motion (added 2026-11-04, owner-approved plan, CSS only)
+
+**Why:** owner asked for the best UI/UX (animated-sections skill). Plan approved: one signature moment (Library hero with a live demo reel), quiet motion elsewhere, CSS + IntersectionObserver only — no new packages.
+
+**Files:** Create `packages/web/src/motion.tsx` (`useInView`, `Reveal`, `prefersReducedMotion`), `src/components/Showcase.tsx`, `src/components/HowItWorks.tsx`, `src/components/ReelCard.tsx`, `src/components/StepTabs.tsx`; Modify `src/pages/Library.tsx`, `src/pages/ReelEditor.tsx`, `src/components/JobBar.tsx`, `src/components/AgentChat.tsx`, `src/pages/Mascot.tsx`, `src/index.css`. Test: `src/motion.test.tsx`, `src/components/JobBar.test.tsx`.
+
+**Interfaces:**
+- `useInView(ref, {once?, rootMargin?}): boolean` — true once the element enters the viewport (true immediately when IntersectionObserver is missing).
+- `<Reveal index?>` — content is visible until JS arms it (`data-reveal="armed"`), then animates to `data-reveal="shown"` when in view; stagger 80 ms per index; reduced motion = instant.
+- Library: hero (headline revealed word by word, accessible name on the `<h1>`), composer, `Showcase` (Remotion Player of the demo reel, autoplay/loop/muted, paused off-screen and on hidden tab, no autoplay with reduced motion, slight tilt on hover/focus), `HowItWorks` (6 ordered steps, connector draws; collapsible once reels exist), reel cards (cover.png when rendered, else the mascot; hover lift; staggered reveal).
+- Editor: `StepTabs` with a sliding active indicator; step content fades in on change; `JobBar` shows a shimmer while running and `✓ <done text>` when finished; AgentChat shows a typing indicator while running and fades in replies.
+- Motion levels: Library "lively" (0.6–0.9 s), editor "calm" (0.3–0.5 s); only transform/opacity animate; `prefers-reduced-motion` removes movement.
+
+- [x] **Step 1:** Failing tests: Reveal arms then shows on intersection; visible without IntersectionObserver; JobBar shows the done message.
+- [x] **Step 2:** Run → FAIL. - [x] **Step 3:** Implement. - [x] **Step 4:** PASS; screenshots of Library/editor; no console errors; reduced-motion check.
+- [x] **Step 5:** Commit `feat(web): purposeful motion and polished library/editor UI`.
+
 ### Task 13: End-to-end verification on Windows
 
 **Files:**

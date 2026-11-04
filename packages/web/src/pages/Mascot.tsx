@@ -158,7 +158,7 @@ export function Mascot() {
 
       <ul className="grid grid-cols-4 gap-3" aria-label="Expressions">
         {EXPRESSIONS.map((ex) => (
-          <li key={ex} className="flex w-40 flex-col items-center gap-2 rounded-lg p-3" style={{ background: brand.bg }}>
+          <li key={ex} className="bob flex w-40 flex-col items-center gap-2 rounded-lg p-3" style={{ background: brand.bg }}>
             <MascotView config={mascot} expression={ex} open={0} width={130} html />
             <span className="text-sm capitalize text-ink-soft">{ex}</span>
             {kind === 'image' ? (

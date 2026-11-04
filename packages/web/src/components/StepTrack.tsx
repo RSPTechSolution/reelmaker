@@ -23,7 +23,7 @@ const words: Record<StepState, string> = { done: 'done', stale: 'out of date', t
 export function StepTrack({ status }: { status: ReelStatus }) {
   const list = steps(status);
   return (
-    <ol className="grid w-72 grid-cols-4 gap-[3px]" aria-label="Progress">
+    <ol className="grid w-full max-w-72 grid-cols-4 gap-[3px]" aria-label="Progress">
       {list.map((s) => (
         <li key={s.label} aria-label={`${s.label}: ${words[s.state]}`}>
           <div className={`h-1.5 ${bar[s.state]}`} />

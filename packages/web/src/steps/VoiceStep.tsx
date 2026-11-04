@@ -73,7 +73,7 @@ export function VoiceStep({ detail, onChanged }: { detail: ReelDetail; onChanged
           {hasVoice ? 'Regenerate all lines' : 'Generate voice'}
         </button>
       </div>
-      <JobBar job={job} running="Making the voice" />
+      <JobBar job={job} running="Making the voice" done="Voice ready" />
 
       {hasVoice ? (
         <div className="flex flex-col gap-2">

@@ -7,7 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { defaultMascot, spokenHash, type ReelProps } from '@reelmaker/shared';
 import { buildApp } from './app.ts';
 import { reelDir, REPO_ROOT } from './paths.ts';
-import { buildProps, contactFrames, coverFrame, renderMp4, REEL_COMPOSITION_ID } from './render.ts';
+import { buildProps, contactFrames, coverFrame, renderMp4, REEL_COMPOSITION_ID, retryBrowserStart } from './render.ts';
 import { saveMascot, saveReel } from './store.ts';
 
 let n = 0;
@@ -98,6 +98,41 @@ describe('coverFrame', () => {
   it('stays inside the video', () => {
     expect(coverFrame({ ...exampleReel(), coverFrame: 5000 }, words, 300)).toBe(299);
     expect(coverFrame({ ...exampleReel(), cues: [] }, words, 300)).toBe(0);
+  });
+});
+
+describe('retryBrowserStart', () => {
+  const slowStart = () => new Error('Timed out after 25000 ms while trying to connect to the browser!');
+
+  it('retries once when Chrome is slow to start', async () => {
+    let calls = 0;
+    const result = await retryBrowserStart(async () => {
+      calls++;
+      if (calls === 1) throw slowStart();
+      return 'ok';
+    });
+    expect(result).toBe('ok');
+    expect(calls).toBe(2);
+  });
+
+  it('gives up after the retry and does not retry other errors', async () => {
+    let calls = 0;
+    await expect(
+      retryBrowserStart(async () => {
+        calls++;
+        throw slowStart();
+      }),
+    ).rejects.toThrow(/connect to the browser/);
+    expect(calls).toBe(2);
+
+    calls = 0;
+    await expect(
+      retryBrowserStart(async () => {
+        calls++;
+        throw new Error('composition Reel not found');
+      }),
+    ).rejects.toThrow(/not found/);
+    expect(calls).toBe(1);
   });
 });
 

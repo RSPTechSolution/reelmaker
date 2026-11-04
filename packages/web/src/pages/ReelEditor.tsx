@@ -1,22 +1,26 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { PlayerRef } from '@remotion/player';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { NavLink, useLocation, useParams } from 'react-router-dom';
-import type { Brand, MascotConfig, ReelProps } from '@reelmaker/shared';
+import type { Brand, MascotConfig, Reel, ReelProps } from '@reelmaker/shared';
 import { api, fileUrl, type ReelDetail, type ReelStatus } from '../api.ts';
 import { AgentChat } from '../components/AgentChat.tsx';
 import { Preview } from '../components/Preview.tsx';
 import { demoProps } from '../demo.ts';
 import { CaptionsStep } from '../steps/CaptionsStep.tsx';
+import { RenderStep } from '../steps/RenderStep.tsx';
+import { ReviewStep } from '../steps/ReviewStep.tsx';
+import { ScenesStep } from '../steps/ScenesStep.tsx';
 import { ScriptStep } from '../steps/ScriptStep.tsx';
 import { VoiceStep } from '../steps/VoiceStep.tsx';
 
 type StepKey = 'script' | 'voice' | 'captions' | 'scenes' | 'review' | 'render';
 type Mark = 'done' | 'stale' | 'todo';
 
-const STEPS: { key: StepKey; label: string; mark: (s: ReelStatus) => Mark }[] = [
+const STEPS: { key: StepKey; label: string; mark: (s: ReelStatus, reel: Reel) => Mark }[] = [
   { key: 'script', label: 'Script', mark: (s) => (s.script ? 'done' : 'todo') },
   { key: 'voice', label: 'Voice', mark: (s) => (s.voice === 'ok' ? 'done' : s.voice === 'stale' ? 'stale' : 'todo') },
   { key: 'captions', label: 'Captions', mark: (s) => (s.timing === 'ok' ? 'done' : s.timing === 'stale' ? 'stale' : 'todo') },
-  { key: 'scenes', label: 'Scenes', mark: () => 'todo' },
+  { key: 'scenes', label: 'Scenes', mark: (_, reel) => (reel.cues.length ? 'done' : 'todo') },
   { key: 'review', label: 'Review', mark: () => 'todo' },
   { key: 'render', label: 'Render', mark: (s) => (s.rendered ? 'done' : 'todo') },
 ];
@@ -49,6 +53,7 @@ export function ReelEditor() {
   const [mascot, setMascot] = useState<MascotConfig>(demoProps.mascot);
   const [loudness, setLoudness] = useState<number[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const player = useRef<PlayerRef>(null);
 
   const reload = useCallback(() => {
     api.getReel(id).then(
@@ -122,8 +127,17 @@ export function ReelEditor() {
     case 'captions':
       body = <CaptionsStep detail={detail} onChanged={reload} />;
       break;
+    case 'scenes':
+      body = <ScenesStep detail={detail} onChanged={reload} seek={(f) => player.current?.seekTo(f)} />;
+      break;
+    case 'review':
+      body = <ReviewStep detail={detail} onChanged={reload} />;
+      break;
+    case 'render':
+      body = <RenderStep detail={detail} onChanged={reload} player={player} />;
+      break;
     default:
-      body = <p className="text-ink-soft">This step is not built yet.</p>;
+      body = <p className="text-ink-soft">This step does not exist.</p>;
   }
 
   return (
@@ -133,7 +147,7 @@ export function ReelEditor() {
         <nav aria-label="Steps">
           <ol className="flex flex-wrap gap-1 border-b border-ink-faint/60">
             {STEPS.map((s, i) => {
-              const mark = s.mark(status);
+              const mark = s.mark(status, reel);
               return (
                 <li key={s.key}>
                   <NavLink
@@ -157,7 +171,7 @@ export function ReelEditor() {
         {body}
       </div>
       <div className="sticky top-8">
-        <Preview props={props} />
+        <Preview ref={player} props={props} />
       </div>
     </div>
   );

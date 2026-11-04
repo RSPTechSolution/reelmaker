@@ -296,11 +296,12 @@
 - ReviewStep: "Make contact sheet" (+ safe-zone toggle) → shows `/files/<id>/out/contact.png?t=<ts>`; AgentChat in `review` mode; after each agent run, contact sheet auto-regenerates.
 - RenderStep: cover frame picker (scrub Player, "Use this frame"), "Render MP4" with progress bar, download links for `reel.mp4` and `cover.png`, video element playing the result.
 
-- [ ] **Step 1: Failing test:** `CueEditor switching block type resets fields to valid defaults` (title → bigNumber gives `{type:'bigNumber', to:0}`).
-- [ ] **Step 2:** Run → FAIL.
-- [ ] **Step 3:** Implement.
-- [ ] **Step 4:** PASS.
-- [ ] **Step 5:** Commit `feat(web): scenes, review and render steps`.
+- Built 2026-11-03/04: `CueEditor` exports `defaultBlock(type)`; word picker shows "word (1.5 s)". ScenesStep has Add cue / Save scenes and the scenes AgentChat; "Show in preview" seeks the Player (ReelEditor holds a `PlayerRef`). ReviewStep auto-remakes the contact sheet after a review agent run. RenderStep: cover = preview's current frame (or default), Render MP4, video + downloads. Found in the manual run and fixed: `npm run dev` now runs the server **without** a file watcher (Windows fired spurious change events and the restart silently killed running jobs; `npm run dev:watch` keeps it for server work); `retryBrowserStart` retries once when headless Chrome takes > 25 s to start; big numbers ≤ 10 appear at their value instead of counting up from 0 (a contact sheet showed "Step 0").
+- [x] **Step 1: Failing test:** `CueEditor switching block type resets fields to valid defaults` (title → bigNumber gives `{type:'bigNumber', to:0}`).
+- [x] **Step 2:** Run → FAIL.
+- [x] **Step 3:** Implement.
+- [x] **Step 4:** PASS.
+- [x] **Step 5:** Commit `feat(web): scenes, review and render steps`.
 
 ### Task 13: End-to-end verification on Windows
 

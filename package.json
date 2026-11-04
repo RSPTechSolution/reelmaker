@@ -12,6 +12,7 @@
     "setup": "node scripts/setup.ts",
     "doctor": "node scripts/doctor.ts",
     "dev": "node scripts/dev.ts",
+    "dev:watch": "node scripts/dev.ts --watch",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json && npm run typecheck --workspaces --if-present"
   },

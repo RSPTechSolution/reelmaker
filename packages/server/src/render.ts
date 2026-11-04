@@ -79,11 +79,26 @@ export function contactFrames(total: number, n = 9): number[] {
   return Array.from({ length: n }, (_, k) => Math.round((k * last) / Math.max(1, n - 1)));
 }
 
+/**
+ * Run `fn`, retrying once if headless Chrome was too slow to start (Remotion gives it 25 s,
+ * which a busy CPU-only PC can miss). Other errors are not retried.
+ */
+export async function retryBrowserStart<T>(fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch (err) {
+    if (!/trying to connect to the browser/i.test(String((err as Error)?.message ?? err))) throw err;
+    return fn();
+  }
+}
+
 async function composition(props: ReelProps) {
   await ensureBrowserOnce();
   const url = await getServeUrl();
   const { selectComposition } = await import('@remotion/renderer');
-  const comp = await selectComposition({ serveUrl: url, id: REEL_COMPOSITION_ID, inputProps: props });
+  const comp = await retryBrowserStart(() =>
+    selectComposition({ serveUrl: url, id: REEL_COMPOSITION_ID, inputProps: props }),
+  );
   return { url, comp };
 }
 
@@ -94,14 +109,16 @@ export async function renderMp4(props: ReelProps, out: string, onProgress: (p: n
   await mkdir(path.dirname(out), { recursive: true });
   const tmp = `${out}.tmp.mp4`;
   try {
-    await renderMedia({
-      composition: comp,
-      serveUrl: url,
-      codec: 'h264',
-      outputLocation: tmp,
-      inputProps: props,
-      onProgress: ({ progress }) => onProgress(Math.min(0.999, progress)),
-    });
+    await retryBrowserStart(() =>
+      renderMedia({
+        composition: comp,
+        serveUrl: url,
+        codec: 'h264',
+        outputLocation: tmp,
+        inputProps: props,
+        onProgress: ({ progress }) => onProgress(Math.min(0.999, progress)),
+      }),
+    );
     await rename(tmp, out);
   } finally {
     await rm(tmp, { force: true });
@@ -124,15 +141,17 @@ export async function renderCover(id: string): Promise<string> {
   const { renderStill } = await import('@remotion/renderer');
   const out = path.join(reelDir(id), 'out', 'cover.png');
   await mkdir(path.dirname(out), { recursive: true });
-  await renderStill({
-    composition: comp,
-    serveUrl: url,
-    inputProps: props,
-    frame: coverFrame(props.reel, props.words, comp.durationInFrames),
-    output: out,
-    imageFormat: 'png',
-    overwrite: true,
-  });
+  await retryBrowserStart(() =>
+    renderStill({
+      composition: comp,
+      serveUrl: url,
+      inputProps: props,
+      frame: coverFrame(props.reel, props.words, comp.durationInFrames),
+      output: out,
+      imageFormat: 'png',
+      overwrite: true,
+    }),
+  );
   return out;
 }
 
@@ -147,7 +166,7 @@ export async function renderContactSheet(
   const { openBrowser, renderStill } = await import('@remotion/renderer');
   const sharp = (await import('sharp')).default;
   const frames = contactFrames(comp.durationInFrames);
-  const browser = await openBrowser('chrome');
+  const browser = await retryBrowserStart(() => openBrowser('chrome'));
   try {
     const tiles: { input: Buffer; left: number; top: number }[] = [];
     for (const [k, frame] of frames.entries()) {

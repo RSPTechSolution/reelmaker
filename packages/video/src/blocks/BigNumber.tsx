@@ -6,6 +6,12 @@ import { Pop, type BlockProps } from './common.tsx';
 
 type BigNumberBlock = Extract<Block, { type: 'bigNumber' }>;
 const COUNT_FRAMES = 24;
+const COUNT_UP_ABOVE = 10;
+
+/** Where the count-up starts: small numbers ("Step 1", "3 tips") just pop in at their value. */
+export function countFrom(to: number): number {
+  return Math.abs(to) > COUNT_UP_ABOVE ? 0 : to;
+}
 
 function format(value: number, target: number): string {
   const decimals = Number.isInteger(target) ? 0 : Math.min(2, (String(target).split('.')[1] ?? '').length);
@@ -14,7 +20,7 @@ function format(value: number, target: number): string {
 
 export const BigNumber: React.FC<BlockProps<BigNumberBlock>> = ({ block, brand, start }) => {
   const frame = useCurrentFrame();
-  const value = interpolate(frame - start, [0, COUNT_FRAMES], [0, block.to], {
+  const value = interpolate(frame - start, [0, COUNT_FRAMES], [countFrom(block.to), block.to], {
     extrapolateLeft: 'clamp',
     extrapolateRight: 'clamp',
     easing: (t) => 1 - Math.pow(1 - t, 3),

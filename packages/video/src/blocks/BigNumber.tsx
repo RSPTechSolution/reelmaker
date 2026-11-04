@@ -2,6 +2,7 @@ import React from 'react';
 import { interpolate, useCurrentFrame } from 'remotion';
 import type { Block } from '@reelmaker/shared';
 import { BLOCK_SLOT, fitText } from '../layout.ts';
+import { headingStyle } from '../themes/style.ts';
 import { Pop, type BlockProps } from './common.tsx';
 
 type BigNumberBlock = Extract<Block, { type: 'bigNumber' }>;
@@ -18,7 +19,7 @@ function format(value: number, target: number): string {
   return value.toLocaleString('en-IN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 }
 
-export const BigNumber: React.FC<BlockProps<BigNumberBlock>> = ({ block, brand, start, anim, skipEntrance }) => {
+export const BigNumber: React.FC<BlockProps<BigNumberBlock>> = ({ block, theme, start, anim, skipEntrance }) => {
   const frame = useCurrentFrame();
   const value = interpolate(frame - start, [0, COUNT_FRAMES], [countFrom(block.to), block.to], {
     extrapolateLeft: 'clamp',
@@ -27,7 +28,7 @@ export const BigNumber: React.FC<BlockProps<BigNumberBlock>> = ({ block, brand, 
   });
   const full = `${block.prefix ?? ''}${format(block.to, block.to)}${block.suffix ?? ''}`;
   // size from the final text so the number does not grow while counting
-  const numberSize = fitText(full, BLOCK_SLOT.w, 300, 72, 1);
+  const numberSize = fitText(full, BLOCK_SLOT.w, 300, 72, 1, theme.charWidth);
   return (
     <Pop start={start} anim={anim} skip={skipEntrance}>
       <div
@@ -35,15 +36,16 @@ export const BigNumber: React.FC<BlockProps<BigNumberBlock>> = ({ block, brand, 
           fontSize: numberSize,
           fontWeight: 800,
           lineHeight: 1,
-          color: brand.accent,
+          color: theme.onBg.accent,
           textAlign: 'center',
           whiteSpace: 'nowrap',
           fontVariantNumeric: 'tabular-nums',
+          ...headingStyle(theme),
         }}
       >
-        {block.prefix ? <span style={{ fontSize: '0.45em', color: brand.text }}>{block.prefix}</span> : null}
+        {block.prefix ? <span style={{ fontSize: '0.45em', color: theme.onBg.text }}>{block.prefix}</span> : null}
         {format(value, block.to)}
-        {block.suffix ? <span style={{ fontSize: '0.45em', color: brand.text }}>{block.suffix}</span> : null}
+        {block.suffix ? <span style={{ fontSize: '0.45em', color: theme.onBg.text }}>{block.suffix}</span> : null}
       </div>
     </Pop>
   );

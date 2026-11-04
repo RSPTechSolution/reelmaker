@@ -22,6 +22,17 @@ describe('fitText', () => {
     expect(fitText('a'.repeat(2000), 900, 96, 50)).toBe(50);
   });
 
+  it('fitText with a wider charWidth picks a smaller size', () => {
+    const text = 'Paisa bachane ke 3 tareeke jo kaam karte hain';
+    const narrow = fitText(text, 900, 96, 36, 2, 0.45);
+    const normal = fitText(text, 900, 96, 36, 2);
+    const wide = fitText(text, 900, 96, 36, 2, 0.7);
+    expect(normal).toBe(fitText(text, 900, 96, 36, 2, 0.55));
+    expect(wide).toBeLessThan(normal);
+    expect(narrow).toBeGreaterThanOrEqual(normal);
+    expect(Math.ceil((text.length * 0.7 * wide) / 900)).toBeLessThanOrEqual(2);
+  });
+
   it('shrinks until the longest single word fits one line', () => {
     const size = fitText('Supercalifragilisticexpialidocious', 900, 96);
     expect(size).toBeLessThan(96);

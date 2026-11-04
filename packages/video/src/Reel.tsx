@@ -1,12 +1,14 @@
 import React, { useMemo } from 'react';
 import { AbsoluteFill, Audio, Sequence, useCurrentFrame, useVideoConfig } from 'remotion';
-import { audioSettings, effectSettings, type Cue, type ReelProps } from '@reelmaker/shared';
+import { audioSettings, effectSettings, reelTheme, type Cue, type ReelProps } from '@reelmaker/shared';
 import { BigNumber } from './blocks/BigNumber.tsx';
 import { Card } from './blocks/Card.tsx';
 import { List } from './blocks/List.tsx';
 import { Sticker } from './blocks/Sticker.tsx';
 import { Title } from './blocks/Title.tsx';
 import { activeCues, cueStartFrame } from './cues.ts';
+import { boil, EXPRESSION_POSE, poseAt } from './drawings/skeleton.ts';
+import { Stickman } from './drawings/Stickman.tsx';
 import {
   CONFETTI_FRAMES,
   confettiPieces,
@@ -24,6 +26,10 @@ import { Karaoke } from './Karaoke.tsx';
 import { BLOCK_SLOT, MASCOT_BOX } from './layout.ts';
 import { Mascot } from './Mascot.tsx';
 import { SafeZones } from './SafeZones.tsx';
+import { Background } from './themes/Background.tsx';
+import { resolveTheme } from './themes/registry.ts';
+import { fontStack } from './themes/style.ts';
+import type { ResolvedTheme } from './themes/types.ts';
 
 export const REEL_COMPOSITION_ID = 'Reel';
 
@@ -31,8 +37,8 @@ const BLINK_EVERY = 105;
 const BLINK_FRAMES = 4;
 const SFX_CLIP_FRAMES = 75;
 
-function MainBlock({ cue, props, start, skipEntrance }: { cue: Cue; props: ReelProps; start: number; skipEntrance?: boolean }) {
-  const common = { brand: props.brand, start, anim: cue.anim, skipEntrance };
+function MainBlock({ cue, theme, start, skipEntrance }: { cue: Cue; theme: ResolvedTheme; start: number; skipEntrance?: boolean }) {
+  const common = { brand: theme.brand, theme, start, anim: cue.anim, skipEntrance };
   switch (cue.block.type) {
     case 'title':
       return <Title block={cue.block} {...common} />;
@@ -84,16 +90,22 @@ function Confetti({ start, frame, colors }: { start: number; frame: number; colo
   );
 }
 
+const isMain = (c: Cue) => c.block.type !== 'sticker' && c.block.type !== 'expression';
+
 /**
- * The reel: blocks (top half of safe box), karaoke captions, mascot, end card, plus sound effects,
- * background music and emotion effects. Same code for Player and render.
+ * The reel: theme background, blocks (top half of safe box), karaoke captions, presenter (mascot or
+ * stickman), end card, plus sound effects, background music and emotion effects. Same code for
+ * Player and render.
  */
 export const Reel: React.FC<ReelProps> = (props) => {
   const { reel, words, loudness, brand, mascot, audioSrc, debugSafeZones } = props;
   const base = props.assetBase ?? '';
   const frame = useCurrentFrame();
   const { durationInFrames } = useVideoConfig();
-  const fontFamily = useBrandFont(brand.font);
+  const resolved = useMemo(() => resolveTheme(reelTheme(reel), brand), [reel, brand]);
+  const headingFont = useBrandFont(resolved.headingFont);
+  const bodyFont = useBrandFont(resolved.bodyFont);
+  const theme = useMemo(() => ({ ...resolved, headingFont, bodyFont }), [resolved, headingFont, bodyFont]);
   const fx = effectSettings(reel);
   const audio = audioSettings(reel);
   const { main, previous, stickers, expression } = activeCues(reel.cues, words, frame, reel.lines);
@@ -108,6 +120,8 @@ export const Reel: React.FC<ReelProps> = (props) => {
 
   // scene change: old block leaves while the new one arrives
   const mainStart = main ? cueStartFrame(main, words) : 0;
+  const mainStarts = useMemo(() => reel.cues.filter(isMain).map((c) => cueStartFrame(c, words)), [reel.cues, words]);
+  const sceneIndex = mainStarts.filter((s) => s <= frame).length;
   const transitioning = !!(main && previous && fx.transition !== 'none');
   const trans = transitionStyles(fx.transition, (frame - mainStart) / TRANSITION_FRAMES);
 
@@ -123,7 +137,9 @@ export const Reel: React.FC<ReelProps> = (props) => {
   const bursts = moments.confetti.filter((s) => frame >= s && frame < s + CONFETTI_FRAMES + 10);
 
   return (
-    <AbsoluteFill style={{ background: brand.bg, fontFamily: `'${fontFamily}', 'Baloo 2', sans-serif`, overflow: 'hidden' }}>
+    <AbsoluteFill style={{ background: theme.brand.bg, fontFamily: fontStack(bodyFont), overflow: 'hidden' }}>
+      <div data-theme={theme.id} style={{ display: 'none' }} />
+      <Background theme={theme} frame={frame} sceneIndex={sceneIndex} sinceScene={main ? frame - mainStart : -1} />
       {audioSrc ? <Audio src={audioSrc} /> : null}
       {audio.music ? (
         <Audio
@@ -142,43 +158,61 @@ export const Reel: React.FC<ReelProps> = (props) => {
         <div style={{ position: 'absolute', left: BLOCK_SLOT.x, top: BLOCK_SLOT.y, width: BLOCK_SLOT.w, height: BLOCK_SLOT.h }}>
           {transitioning && previous ? (
             <div key={`out-${previous.id}`} style={{ ...centered, ...trans.out }}>
-              <MainBlock cue={previous} props={props} start={cueStartFrame(previous, words)} skipEntrance />
+              <MainBlock cue={previous} theme={theme} start={cueStartFrame(previous, words)} skipEntrance />
             </div>
           ) : null}
           {main ? (
             <div key={`in-${main.id}`} style={{ ...centered, ...(transitioning ? trans.in : {}) }}>
-              <MainBlock cue={main} props={props} start={mainStart} skipEntrance={transitioning} />
+              <MainBlock cue={main} theme={theme} start={mainStart} skipEntrance={transitioning} />
             </div>
           ) : null}
         </div>
         {stickers.map((cue, i) =>
           cue.block.type === 'sticker' ? (
-            <Sticker key={cue.id} block={cue.block} brand={brand} start={cueStartFrame(cue, words)} index={i} />
+            <Sticker key={cue.id} block={cue.block} brand={theme.brand} theme={theme} start={cueStartFrame(cue, words)} index={i} />
           ) : null,
         )}
 
-        <Karaoke words={words} lines={reel.lines} keywords={reel.keywords} brand={brand} kinetic={fx.captions} />
+        <Karaoke words={words} lines={reel.lines} keywords={reel.keywords} theme={theme} kinetic={fx.captions} />
 
-        <div
-          style={{
-            position: 'absolute',
-            left: MASCOT_BOX.x,
-            top: MASCOT_BOX.y,
-            width: MASCOT_BOX.w,
-            height: MASCOT_BOX.h,
-            // scale(0.96) leaves 8 px above and below, so the ±8 px bob never leaves the safe box
-            transform: `translateY(${bob}px) scale(0.96)`,
-          }}
-        >
-          <Mascot config={mascot} expression={expression} open={open} blink={blink} />
-        </div>
+        {theme.presenter !== 'none' ? (
+          <div
+            style={{
+              position: 'absolute',
+              left: MASCOT_BOX.x,
+              top: MASCOT_BOX.y,
+              width: MASCOT_BOX.w,
+              height: MASCOT_BOX.h,
+              // scale(0.96) leaves 8 px above and below, so the ±8 px bob never leaves the safe box
+              transform: `translateY(${theme.presenter === 'mascot' ? bob : 0}px) scale(0.96)`,
+              ...(theme.mascotFilter ? { filter: theme.mascotFilter } : {}),
+            }}
+          >
+            {theme.presenter === 'stickman' ? (
+              <div data-stickman-presenter="" style={{ display: 'flex', justifyContent: 'center' }}>
+                <Stickman
+                  skeleton={boil(poseAt(EXPRESSION_POSE[expression], frame), frame, theme.ink.boil)}
+                  ink={theme.ink}
+                  pose={EXPRESSION_POSE[expression]}
+                  face={expression}
+                  mouthOpen={open}
+                  blink={blink}
+                />
+              </div>
+            ) : (
+              <div data-mascot="">
+                <Mascot config={mascot} expression={expression} open={open} blink={blink} />
+              </div>
+            )}
+          </div>
+        ) : null}
       </AbsoluteFill>
 
       {bursts.map((s) => (
-        <Confetti key={s} start={s} frame={frame} colors={[brand.accent, brand.accent2, '#FFD23F', '#FF6B8A']} />
+        <Confetti key={s} start={s} frame={frame} colors={theme.confetti} />
       ))}
 
-      {frame >= endStart ? <EndCard brand={brand} start={endStart} /> : null}
+      {frame >= endStart ? <EndCard theme={theme} start={endStart} /> : null}
       {debugSafeZones ? <SafeZones /> : null}
     </AbsoluteFill>
   );

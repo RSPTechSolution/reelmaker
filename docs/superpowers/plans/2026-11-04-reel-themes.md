@@ -355,8 +355,9 @@ Message: `feat(video): 24 animated props`
     - `'none'`: nothing.
   - Confetti uses `theme.confetti`.
   - Export `resolveTheme` and `type ResolvedTheme` from `exports.ts`.
+  - *(Added in build)* `ResolvedTheme.onBg: { text; accent }`: colours for titles, numbers, lists and the end card drawn on the background (tested ≥ 4.5 / ≥ 3 against `brand.bg`); `Background` also takes `sinceScene` (news BREAKING flash); `themes/style.ts` holds `headingStyle`, `fontStack`, `seeded`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 In `layout.test.ts`: `fitText with a wider charWidth picks a smaller size` (same text, 0.55 vs 0.7).
 
@@ -367,25 +368,25 @@ In `themedReel.test.tsx`, render `Reel` through a minimal frame harness: mock `r
 - `bold has no presenter`.
 - `plate themes draw a caption plate`: `theme:'neon'` has an element with `data-caption-plate`.
 
-- [ ] **Step 2: Run to fail**
+- [x] **Step 2: Run to fail**
 
 Run: `npx vitest run packages/video/src/themes packages/video/src/layout.test.ts`
 Expected: FAIL.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Work in this order: Background, Surface, the block changes, Karaoke, EndCard, then Reel.
 - Every block passes `theme.charWidth` to `fitText` and uses `theme.headingFont`, `uppercase` and `textGlow`.
 - `Sticker` draws `theme.sticker`. `burst` is a jagged SVG star behind the agent's own text.
 
-- [ ] **Step 4: Run to pass, then look at stills**
+- [x] **Step 4: Run to pass, then look at stills**
 
 Run: `npm test && npm run typecheck`
 Expected: PASS.
 
 Then render one still per theme from the demo props, with the `theme` set per run. Use `npx remotion still` from `packages/video` with a props file written to the scratchpad. Open the stills, compare them against spec §5, and check that nothing leaves the safe box (use `debugSafeZones: true`). Fix whatever looks wrong before committing.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Message: `feat(video): themed backgrounds, surfaces, captions and presenter`
 

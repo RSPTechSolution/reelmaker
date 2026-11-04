@@ -1,12 +1,14 @@
 import React from 'react';
 import { interpolate, spring, useCurrentFrame, useVideoConfig } from 'remotion';
-import type { Brand } from '@reelmaker/shared';
 import { fitText, SAFE_BOX } from './layout.ts';
+import { headingStyle } from './themes/style.ts';
+import type { ResolvedTheme } from './themes/types.ts';
 
 export const END_CARD_FRAMES = 45;
 
 /** Last 1.5 s: handle + "Follow for more", inside the safe box. */
-export const EndCard: React.FC<{ brand: Brand; start: number }> = ({ brand, start }) => {
+export const EndCard: React.FC<{ theme: ResolvedTheme; start: number }> = ({ theme, start }) => {
+  const brand = theme.brand;
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const fade = interpolate(frame - start, [0, 8], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
@@ -28,15 +30,16 @@ export const EndCard: React.FC<{ brand: Brand; start: number }> = ({ brand, star
           transform: `scale(${0.7 + 0.3 * pop})`,
         }}
       >
-        <div style={{ fontSize: fitText(brand.handle, SAFE_BOX.w, 110, 48, 1), fontWeight: 800, color: brand.accent }}>
+        <div style={{ fontSize: fitText(brand.handle, SAFE_BOX.w, 110, 48, 1, theme.charWidth), fontWeight: 800, color: theme.onBg.accent, ...headingStyle(theme) }}>
           {brand.handle}
         </div>
         <div
           style={{
             fontSize: 64,
             fontWeight: 700,
-            color: '#FFFFFF',
-            background: brand.text,
+            // classic keeps today's white-on-ink button; themes invert their own background
+            color: theme.id === 'classic' ? '#FFFFFF' : brand.bg,
+            background: theme.onBg.text,
             padding: '20px 56px',
             borderRadius: 999,
           }}

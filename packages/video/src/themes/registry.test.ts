@@ -46,6 +46,14 @@ describe('theme registry', () => {
     }
   });
 
+  it('titles and numbers drawn on the background are readable', () => {
+    for (const t of all) {
+      expect(contrastRatio(t.onBg.text, t.brand.bg), `${t.id} text`).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(t.onBg.accent, t.brand.bg), `${t.id} accent`).toBeGreaterThanOrEqual(3);
+    }
+    expect(resolveTheme('classic', brand).onBg).toEqual({ text: brand.text, accent: brand.accent });
+  });
+
   it('busy backgrounds get a caption plate', () => {
     for (const id of ['comic', 'neon', 'paper', 'bollywood'] as const) expect(resolveTheme(id, brand).caption.plate, id).toBe(true);
   });

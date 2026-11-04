@@ -2,10 +2,13 @@ import React from 'react';
 import { spring, useCurrentFrame, useVideoConfig } from 'remotion';
 import type { Anim, Brand } from '@reelmaker/shared';
 import { entrance } from '../effects.ts';
+import type { ResolvedTheme } from '../themes/types.ts';
 
 export type BlockProps<B> = {
   block: B;
   brand: Brand;
+  /** the reel's theme (brand above is theme.brand) */
+  theme: ResolvedTheme;
   /** frame the block appeared */
   start: number;
   /** entrance style (pop when unset) */

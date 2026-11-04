@@ -61,6 +61,8 @@ export type ResolvedTheme = {
   presenter: 'mascot' | 'stickman' | 'none';
   /** CSS filter on the mascot wrapper (ink outline / neon glow) */
   mascotFilter?: string;
+  /** titles, numbers and the end card drawn straight on the background */
+  onBg: { text: string; accent: string };
   /** backdrop = the solid colour behind the captions (the plate's colour when plate is true) */
   caption: { backdrop: string; plate: boolean; spoken: string; keyword: string; upcoming: string };
   confetti: string[];

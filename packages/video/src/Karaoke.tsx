@@ -1,24 +1,28 @@
 import React from 'react';
 import { spring, useCurrentFrame, useVideoConfig } from 'remotion';
-import type { Brand, EffectSettings, Line, WordTiming } from '@reelmaker/shared';
+import type { EffectSettings, Line, WordTiming } from '@reelmaker/shared';
 import { wordKinetics } from './effects.ts';
 import { captionChunks } from './captions.ts';
 import { CAPTION_BAND, fitText } from './layout.ts';
+import type { ResolvedTheme } from './themes/types.ts';
 
 export const UPCOMING = '#9A9A9A';
 export const WORDS_PER_CHUNK = 4;
 
 const norm = (w: string) => w.normalize('NFC').toLowerCase().replace(/[\p{P}\p{S}]/gu, '');
 
-/** Karaoke captions: one chunk (≤ 4 words, within one line) at a time; spoken words solid, upcoming grey, keywords accent. */
+/**
+ * Karaoke captions: one chunk (≤ 4 words, within one line) at a time; spoken words solid, upcoming
+ * dimmed, keywords accent, in the theme's caption colours (on a plate for busy backgrounds).
+ */
 export const Karaoke: React.FC<{
   words: WordTiming[];
   lines: Line[];
   keywords: string[];
-  brand: Brand;
+  theme: ResolvedTheme;
   /** kinetic style of the word being spoken */
   kinetic?: EffectSettings['captions'];
-}> = ({ words, lines, keywords, brand, kinetic = 'pop' }) => {
+}> = ({ words, lines, keywords, theme, kinetic = 'pop' }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const t = frame / fps;
@@ -28,7 +32,9 @@ export const Karaoke: React.FC<{
 
   const keys = new Set(keywords.map(norm));
   const text = current.map((w) => w.caption).join(' ');
-  const size = fitText(text, CAPTION_BAND.w, 92, 44, 2);
+  const { caption } = theme;
+  const pad = caption.plate ? 40 : 0;
+  const size = fitText(text, CAPTION_BAND.w - pad * 2, 92, 44, 2, theme.charWidth);
   const speaking = current.filter((w) => w.start <= t).at(-1);
   const enter = spring({ frame: frame - Math.round(current[0].start * fps), fps, config: { damping: 14, stiffness: 200 } });
 
@@ -46,7 +52,12 @@ export const Karaoke: React.FC<{
       }}
     >
       <div
+        {...(caption.plate ? { 'data-caption-plate': '' } : {})}
         style={{
+          ...(caption.plate
+            ? { background: caption.backdrop, opacity: 0.94, borderRadius: Math.min(36, theme.brand.radius + 12), padding: `18px ${pad}px` }
+            : {}),
+          ...(theme.uppercase ? { textTransform: 'uppercase' as const } : {}),
           fontSize: size,
           fontWeight: 800,
           lineHeight: 1.15,
@@ -57,7 +68,7 @@ export const Karaoke: React.FC<{
       >
         {current.map((w, k) => {
           const spoken = w.start <= t;
-          const color = keys.has(norm(w.caption)) ? brand.accent : spoken ? brand.text : UPCOMING;
+          const color = keys.has(norm(w.caption)) ? caption.keyword : spoken ? caption.spoken : caption.upcoming;
           const move = w === speaking ? wordKinetics(kinetic, frame - Math.round(w.start * fps)) : { scale: 1, y: 0 };
           return (
             <React.Fragment key={w.i}>

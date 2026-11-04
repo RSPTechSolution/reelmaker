@@ -33,17 +33,25 @@ export const CAPTION_BAND: Box = {
 };
 
 /** Average glyph width as a fraction of font size (rough, errs on the wide side for Baloo 2). */
-const CHAR_W = 0.55;
+export const CHAR_W = 0.55;
 
 /**
  * Largest font size (≤ maxFontPx, ≥ minFontPx) at which `text` fits `maxWidth` in at most
- * `maxLines` lines, using width ≈ chars × 0.55 × font. The longest word must fit on one line.
+ * `maxLines` lines, using width ≈ chars × charWidth × font (0.55 for Baloo 2; each theme sets its own).
+ * The longest word must fit on one line.
  */
-export function fitText(text: string, maxWidth: number, maxFontPx: number, minFontPx = 36, maxLines = 3): number {
+export function fitText(
+  text: string,
+  maxWidth: number,
+  maxFontPx: number,
+  minFontPx = 36,
+  maxLines = 3,
+  charWidth = CHAR_W,
+): number {
   const chars = text.trim().length;
   const longest = Math.max(0, ...text.split(/\s+/).map((w) => w.length));
   const fits = (size: number) =>
-    Math.ceil((chars * CHAR_W * size) / maxWidth) <= maxLines && longest * CHAR_W * size <= maxWidth;
+    Math.ceil((chars * charWidth * size) / maxWidth) <= maxLines && longest * charWidth * size <= maxWidth;
   for (let size = maxFontPx; size > minFontPx; size -= 2) {
     if (fits(size)) return size;
   }

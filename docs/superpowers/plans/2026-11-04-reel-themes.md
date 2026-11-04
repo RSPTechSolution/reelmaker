@@ -178,7 +178,7 @@ export type ResolvedTheme = {
   - `plate: true` for `comic`, `neon`, `paperLayers`-based `paper` and `bollywood`. The fonts and looks follow spec §5.
 - Produces (`contrast.ts`): `contrastRatio(a: string, b: string): number` (WCAG relative luminance, `#rgb`/`#rrggbb`).
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 - `contrastRatio`: `('#000','#fff')` ≈ 21, `('#fff','#fff')` = 1.
 - `classic is the brand unchanged`: `resolveTheme('classic', brand).brand` deep-equals `brand`, and `caption.upcoming === '#9A9A9A'`.
@@ -188,19 +188,19 @@ export type ResolvedTheme = {
 - `themes look different`: no two themes share the same `(background, surface, headingFont)` triple.
 - `presenters`: `stickman`, `chalkboard` and `notebook` are `'stickman'`; `bold` is `'none'`.
 
-- [ ] **Step 2: Run to fail**
+- [x] **Step 2: Run to fail**
 
 Run: `npx vitest run packages/video/src/themes`
 Expected: FAIL (module missing).
 
-- [ ] **Step 3: Implement `types.ts`, `contrast.ts` and `registry.ts`**
+- [x] **Step 3: Implement `types.ts`, `contrast.ts` and `registry.ts`**
 
-- [ ] **Step 4: Run to pass**
+- [x] **Step 4: Run to pass**
 
 Run: `npm test && npm run typecheck`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Message: `feat(video): theme registry with contrast checks`
 

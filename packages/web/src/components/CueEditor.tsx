@@ -1,4 +1,4 @@
-import type { Block, BlockType, Cue, Expression } from '@reelmaker/shared';
+import type { Anim, Block, BlockType, Cue, Expression } from '@reelmaker/shared';
 
 export type WordOption = { i: number; caption: string; start?: number };
 
@@ -9,6 +9,13 @@ const TYPES: { value: BlockType; label: string }[] = [
   { value: 'list', label: 'List' },
   { value: 'sticker', label: 'Sticker (overlay)' },
   { value: 'expression', label: 'Mascot face' },
+];
+const ANIMS: { value: Anim; label: string }[] = [
+  { value: 'pop', label: 'Pop' },
+  { value: 'slide', label: 'Slide in' },
+  { value: 'zoom', label: 'Zoom in' },
+  { value: 'bounce', label: 'Bounce' },
+  { value: 'typewriter', label: 'Typewriter' },
 ];
 const FACES: Expression[] = ['happy', 'thinking', 'surprised', 'wink', 'excited', 'laughing', 'shocked', 'sad'];
 const MAX_ITEMS = 5;
@@ -146,6 +153,10 @@ export function CueEditor({
   onDelete: () => void;
   onSeek: (cue: Cue) => void;
 }) {
+  const setAnim = (v: string) => {
+    const { anim: _old, ...rest } = cue;
+    onChange(v === '' ? rest : { ...rest, anim: v as Anim });
+  };
   const setUntil = (v: string) => {
     const { untilWord: _old, ...rest } = cue;
     onChange(v === '' ? rest : { ...rest, untilWord: Number(v) });
@@ -200,6 +211,19 @@ export function CueEditor({
                     {wordLabel(w)}
                   </option>
                 ))}
+            </select>
+          </label>
+        ) : null}
+        {cue.block.type !== 'expression' ? (
+          <label className="flex w-36 flex-col gap-1 text-xs text-ink-soft">
+            Entrance
+            <select className="field py-1.5 text-sm" aria-label="Entrance" value={cue.anim ?? ''} onChange={(e) => setAnim(e.target.value)}>
+              <option value="">Pop (default)</option>
+              {ANIMS.filter((a) => a.value !== 'pop').map((a) => (
+                <option key={a.value} value={a.value}>
+                  {a.label}
+                </option>
+              ))}
             </select>
           </label>
         ) : null}

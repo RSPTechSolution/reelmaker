@@ -1,4 +1,5 @@
 import type { Brand, MascotConfig, Reel, WordTiming } from '@reelmaker/shared';
+import type { AudioLibrary, MusicTrack } from './components/SoundPanel.tsx';
 
 export type ReelStatus = {
   script: boolean;
@@ -57,6 +58,14 @@ export const api = {
   },
   deleteCharacter: (expression: string) =>
     request<MascotConfig>('DELETE', `/api/mascot/image/${encodeURIComponent(expression)}`),
+
+  getAudio: () => request<AudioLibrary>('GET', '/api/audio'),
+  uploadMusic: (file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    return request<MusicTrack>('POST', '/api/audio/music', form);
+  },
+  deleteMusic: (file: string) => request<{ ok: true }>('DELETE', `/api/audio/music/${encodeURIComponent(file)}`),
 
   startVoice: (id: string, only?: string[]) => request<JobRef>('POST', `${reel(id)}/voice`, only ? { only } : {}),
   uploadVoice: (id: string, file: File) => {

@@ -66,6 +66,7 @@ export function ReelEditor() {
   useEffect(reload, [reload]);
   useEffect(() => {
     api.getBrand().then(setBrand, () => {});
+    api.getAudio().catch(() => {}); // makes sure the built-in sound effects exist for the preview
     api.getMascot().then(setMascot, () => {});
   }, []);
   // mouth movement for the preview: per-frame loudness written by the Captions step

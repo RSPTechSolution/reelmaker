@@ -4,6 +4,7 @@ import { cueStartFrame } from '@reelmaker/video';
 import { api, ApiError, type ReelDetail } from '../api.ts';
 import { AgentChat } from '../components/AgentChat.tsx';
 import { CueEditor, type WordOption } from '../components/CueEditor.tsx';
+import { SoundPanel, type AudioLibrary } from '../components/SoundPanel.tsx';
 
 function nextCueId(cues: Cue[]): string {
   const max = cues.reduce((m, c) => Math.max(m, Number(/^c(\d+)$/.exec(c.id)?.[1] ?? 0)), 0);
@@ -25,6 +26,21 @@ export function ScenesStep({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => setCues(reel.cues), [reel.cues]);
+  const [library, setLibrary] = useState<AudioLibrary | null>(null);
+  const loadLibrary = () => api.getAudio().then(setLibrary, (e) => setError(String(e?.message ?? e)));
+  useEffect(() => {
+    void loadLibrary();
+  }, []);
+  const fail = (e: unknown) => setError(e instanceof ApiError ? e.message : String(e));
+  // sound and effect settings save straight away (cues keep their own Save button)
+  const saveSound = async (next: Reel) => {
+    try {
+      await api.saveReel({ ...next, cues: reel.cues });
+      onChanged();
+    } catch (e) {
+      fail(e);
+    }
+  };
 
   // caption words with their spoken time when captions are synced, else just the words
   const options: WordOption[] = useMemo(
@@ -60,6 +76,26 @@ export function ScenesStep({
   return (
     <div className="flex flex-col gap-5">
       {!reel.lines.length ? <p className="text-ink-soft">Write the script first: scenes are triggered by its words.</p> : null}
+      <SoundPanel
+        reel={reel}
+        library={library}
+        onSave={saveSound}
+        onUpload={(f) =>
+          api.uploadMusic(f).then(async (t) => {
+            await loadLibrary();
+            await saveSound({ ...reel, audio: { ...(reel.audio ?? { sfx: true, sfxVolume: 0.6 }), music: { track: t.file, volume: reel.audio?.music?.volume ?? 0.25 } } });
+          }, fail)
+        }
+        onDelete={(file) =>
+          api.deleteMusic(file).then(async () => {
+            await loadLibrary();
+            if (reel.audio?.music?.track === file) {
+              const { music: _gone, ...rest } = reel.audio;
+              await saveSound({ ...reel, audio: rest });
+            }
+          }, fail)
+        }
+      />
       <AgentChat
         reelId={reel.id}
         mode="scenes"

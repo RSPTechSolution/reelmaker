@@ -26,6 +26,8 @@ Format of `reel.json`: see `docs/reel-schema.md`.
 - A number in the script → `bigNumber` at that word.
 - At most 1–2 `sticker`s.
 - Mascot faces: happy, thinking, surprised, wink, excited, laughing, shocked, sad. A line's mood already sets a face; add an `expression` cue on every emotional beat where the face should differ (surprised on a reveal, laughing on a joke, wink on the call to action).
+- Every cue gets an entrance `anim` (pop, slide, zoom, bounce, typewriter); vary them. Typewriter for titles, bounce for numbers and stickers, zoom for a reveal.
+- Sound effects fire automatically (whoosh on scene changes, ding when a number lands, boom on shocked lines), so place cues on the word that should carry the hit.
 - Card titles ≤ 4 words, bodies ≤ 6 words. List items ≤ 3 words, at most 5 items.
 - 3–6 `keywords`: the words the viewer should remember.
 

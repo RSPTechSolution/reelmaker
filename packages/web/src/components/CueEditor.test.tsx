@@ -73,6 +73,21 @@ describe('CueEditor', () => {
     expect((screen.getByRole('button', { name: 'Add item' }) as HTMLButtonElement).disabled).toBe(true);
   });
 
+  it('sets and clears the entrance style (not offered for mascot faces)', () => {
+    const { onChange } = setup();
+    const select = screen.getByLabelText('Entrance') as HTMLSelectElement;
+    expect(select.value).toBe('');
+    fireEvent.change(select, { target: { value: 'typewriter' } });
+    expect(onChange).toHaveBeenLastCalledWith({ ...title, anim: 'typewriter' });
+    cleanup();
+    const styled = setup({ ...title, anim: 'zoom' });
+    fireEvent.change(screen.getByLabelText('Entrance'), { target: { value: '' } });
+    expect(styled.onChange).toHaveBeenLastCalledWith(title);
+    cleanup();
+    setup({ id: 'f', atWord: 0, block: { type: 'expression', expression: 'wink' } });
+    expect(screen.queryByLabelText('Entrance')).toBeNull();
+  });
+
   it('jumps the preview to the cue and deletes it', () => {
     const { onSeek, onDelete } = setup();
     fireEvent.click(screen.getByRole('button', { name: 'Show in preview' }));

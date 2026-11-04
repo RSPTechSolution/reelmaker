@@ -63,6 +63,7 @@ export async function buildProps(id: string): Promise<ReelProps> {
     brand: await getBrand(),
     mascot: absoluteImages(await getMascot()),
     audioSrc: existsSync(path.join(dir, 'vo.wav')) ? `${SERVER_ORIGIN}/files/${id}/vo.wav` : null,
+    assetBase: SERVER_ORIGIN, // sound effects and music are fetched from /audio/
   };
 }
 

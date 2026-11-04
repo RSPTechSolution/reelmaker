@@ -21,12 +21,14 @@ os.dup2(sys.stderr.fileno(), sys.stdout.fileno())
 sys.stdout = sys.stderr
 sys.stdin.reconfigure(encoding="utf-8")
 
+from ops.assets import assets  # noqa: E402
 from ops.loudness import loudness  # noqa: E402
 from ops.transcribe import timing  # noqa: E402
 from ops.tts import tts  # noqa: E402
 
 # Heavy models (Kokoro, Whisper) load lazily on the first tts/timing call.
 OPS = {
+    "assets": assets,
     "loudness": loudness,
     "tts": tts,
     "timing": timing,

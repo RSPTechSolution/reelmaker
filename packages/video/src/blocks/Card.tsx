@@ -6,12 +6,12 @@ import { Pop, type BlockProps } from './common.tsx';
 type CardBlock = Extract<Block, { type: 'card' }>;
 const PAD = 56;
 
-export const Card: React.FC<BlockProps<CardBlock>> = ({ block, brand, start }) => {
+export const Card: React.FC<BlockProps<CardBlock>> = ({ block, brand, start, anim, skipEntrance }) => {
   const inner = BLOCK_SLOT.w - PAD * 2;
   const titleSize = fitText(block.title, inner, 88, 44, 2);
   const bodySize = block.body ? fitText(block.body, inner, 54, 32, 3) : 0;
   return (
-    <Pop start={start} style={{ width: BLOCK_SLOT.w }}>
+    <Pop start={start} anim={anim} skip={skipEntrance} style={{ width: BLOCK_SLOT.w }}>
       <div
         style={{
           background: brand.surface,

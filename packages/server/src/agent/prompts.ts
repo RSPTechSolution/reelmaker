@@ -67,6 +67,7 @@ export function scenesPrompt(reel: Reel, words: WordTiming[], instruction?: stri
     `- The first cue is at word 0 and is a "title".`,
     `- Numbers in the script become "bigNumber" cues at the word of the number.`,
     `- At most 1–2 "sticker" cues.`,
+    `- Give each cue an entrance "anim": pop, slide, zoom, bounce or typewriter. Vary them so consecutive cues differ; typewriter suits titles, bounce suits big numbers and stickers, zoom suits a reveal.`,
     `- Mascot faces ("expression" cues): happy, thinking, surprised, wink, excited, laughing, shocked, sad. Change the face on every emotional beat where it differs from the line's mood (a line's mood already sets a face), e.g. surprised on a reveal, wink on the call to action.`,
     `- "keywords": 3–6 important caption words to highlight.`,
     `- atWord must be less than ${totalWords(reel.lines)} (the script's word count). Cue ids: c1, c2, …`,

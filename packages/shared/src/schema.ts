@@ -60,10 +60,15 @@ export const Block = z.discriminatedUnion('type', [
 export type Block = z.infer<typeof Block>;
 export type BlockType = Block['type'];
 
+/** How a block enters the screen. */
+export const Anim = z.enum(['pop', 'slide', 'zoom', 'bounce', 'typewriter']);
+export type Anim = z.infer<typeof Anim>;
+
 export const Cue = z.object({
   id: SafeId,
   atWord: z.number().int().min(0),
   untilWord: z.number().int().min(0).optional(),
+  anim: Anim.optional(),
   block: Block,
 });
 export type Cue = z.infer<typeof Cue>;
@@ -85,6 +90,25 @@ export const WordTiming = z.object({
 });
 export type WordTiming = z.infer<typeof WordTiming>;
 
+/** Built-in or uploaded audio file in DATA_DIR/audio/music (never a URL or a path). */
+export const AudioFile = z
+  .string()
+  .regex(/^(builtin|upload)-[a-z0-9-]{1,60}\.(wav|mp3|m4a)$/, 'not an audio file from the music library');
+
+export const AudioSettings = z.object({
+  sfx: z.boolean(),
+  sfxVolume: z.number().min(0).max(1),
+  music: z.object({ track: AudioFile, volume: z.number().min(0).max(1) }).optional(),
+});
+export type AudioSettings = z.infer<typeof AudioSettings>;
+
+export const EffectSettings = z.object({
+  transition: z.enum(['none', 'slide', 'whip', 'zoom']),
+  captions: z.enum(['color', 'pop', 'bounce']),
+  emotion: z.boolean(),
+});
+export type EffectSettings = z.infer<typeof EffectSettings>;
+
 /** Total number of words in the script (caption words; equal to spoken words when valid). */
 export function totalWords(lines: { caption: string }[]): number {
   return lines.reduce((n, l) => n + splitWords(l.caption).length, 0);
@@ -102,6 +126,8 @@ export const Reel = z
     cues: z.array(Cue),
     keywords: z.array(z.string()),
     coverFrame: z.number().int().min(0).optional(),
+    audio: AudioSettings.optional(),
+    effects: EffectSettings.optional(),
     hashes: z.object({ voice: z.string().optional(), timing: z.string().optional() }),
     createdAt: z.string(),
     updatedAt: z.string(),
@@ -171,6 +197,8 @@ export const ReelProps = z.object({
   brand: Brand,
   mascot: MascotConfig,
   audioSrc: z.string().nullable(),
+  /** Origin for /audio/ files: '' in the web app, http://127.0.0.1:4000 for the renderer. */
+  assetBase: z.string().optional(),
   debugSafeZones: z.boolean().optional(),
 });
 export type ReelProps = z.infer<typeof ReelProps>;

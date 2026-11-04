@@ -6,6 +6,7 @@ import { HttpError } from './errors.ts';
 import { REELS_DIR } from './paths.ts';
 import { getWorker } from './python.ts';
 import { agentRoutes } from './routes/agent.ts';
+import { audioLibraryRoutes } from './routes/audioLibrary.ts';
 import type { SpawnFn } from './agent/run.ts';
 import { audioRoutes, MAX_UPLOAD_BYTES, remotionFfmpegConvert, type AudioWorker, type ConvertAudio } from './routes/audio.ts';
 import { jobRoutes } from './routes/jobs.ts';
@@ -63,14 +64,11 @@ export function buildApp(
   app.register(fastifyStatic, { root: REELS_DIR, prefix: '/files/', decorateReply: false });
   app.register(fastifyMultipart, { limits: { fileSize: MAX_UPLOAD_BYTES, files: 1 } });
   app.register(reelRoutes);
-  app.register(
-    audioRoutes({
-      // getWorker() is lazy: the Python process starts on the first voice/timing job.
-      worker: opts.worker ?? { call: (op, args, onProgress) => getWorker().call(op, args, onProgress) },
-      convertAudio: opts.convertAudio ?? remotionFfmpegConvert,
-    }),
-  );
-  app.register(renderRoutes);
+  // getWorker() is lazy: the Python process starts on the first voice/timing/sound job.
+  const worker: AudioWorker = opts.worker ?? { call: (op, args, onProgress) => getWorker().call(op, args, onProgress) };
+  app.register(audioRoutes({ worker, convertAudio: opts.convertAudio ?? remotionFfmpegConvert }));
+  app.register(audioLibraryRoutes({ worker }));
+  app.register(renderRoutes({ worker }));
   app.register(agentRoutes({ spawnFn: opts.spawnClaude }));
   app.register(settingsRoutes);
   app.register(jobRoutes);

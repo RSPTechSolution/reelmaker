@@ -258,6 +258,12 @@ describe('prompts', () => {
     for (const f of ['happy', 'thinking', 'surprised', 'wink', 'excited', 'laughing', 'shocked', 'sad']) expect(p).toContain(f);
   });
 
+  it('scenes prompt asks for a varied entrance style per cue', () => {
+    const p = scenesPrompt(reel, []);
+    expect(p).toContain('"anim"');
+    for (const a of ['pop', 'slide', 'zoom', 'bounce', 'typewriter']) expect(p).toContain(a);
+  });
+
   it('scenes prompt lists words with index and time', () => {
     const p = scenesPrompt(reel, [{ i: 9, caption: '3', spoken: 'तीन', start: 2.5, end: 2.8, filled: false }]);
     expect(p).toContain('9 3 @2.50s');

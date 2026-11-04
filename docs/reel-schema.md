@@ -16,6 +16,8 @@ Every reel lives in `data/reels/<id>/reel.json`. The server validates it with zo
 | `cues` | Cue[] | Animated scenes, each triggered by a word. |
 | `keywords` | string[] | Caption words shown in the accent colour (case-insensitive match against caption words). |
 | `coverFrame` | integer ≥ 0, optional | Frame used for the cover PNG. |
+| `audio` | optional `{sfx, sfxVolume, music?: {track, volume}}` | Sound effects on/off and volume (0–1); background track from the music library (`builtin-lofi.wav`, `builtin-upbeat.wav`, `builtin-dramatic.wav` or the owner's `upload-….mp3`). Default: effects on at 0.6, no music. |
+| `effects` | optional `{transition, captions, emotion}` | Scene transition `none`/`slide`/`whip`/`zoom`, caption style `color`/`pop`/`bounce`, emotion effects on/off (shake on shocked lines, confetti on excited lines, zoom punch on keywords). Default: slide, pop, on. |
 | `hashes` | `{voice?: string, timing?: string}` | Set by the server. **Never edit.** |
 | `createdAt`, `updatedAt` | ISO date string | Set by the server. |
 
@@ -46,6 +48,7 @@ Words are numbered from **0** across the whole script, in order, using `caption`
 - `atWord` — integer word index at which the block appears. Must be **less than the total word count**.
 - `untilWord` — optional; the block disappears after this word. Without it, a block stays until the next main block replaces it.
 - `id` — unique within the reel (`c1`, `c2`, …).
+- `anim` — optional entrance: `pop` (default) | `slide` | `zoom` | `bounce` | `typewriter` (types the title in).
 
 ## Blocks (`block.type`)
 

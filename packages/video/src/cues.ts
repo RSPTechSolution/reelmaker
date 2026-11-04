@@ -17,7 +17,16 @@ export function cueEndFrame(cue: Cue, words: WordTiming[]): number {
   return Math.round(endSec * FPS);
 }
 
-export type ActiveCues = { main?: Cue; stickers: Cue[]; expression: Expression };
+/** Frames the old and new main block overlap during a scene change (see effects.ts). */
+const OVERLAP_FRAMES = 10;
+
+export type ActiveCues = {
+  main?: Cue;
+  /** The main block being replaced, during the first OVERLAP_FRAMES of a scene change. */
+  previous?: Cue;
+  stickers: Cue[];
+  expression: Expression;
+};
 
 /**
  * What is on screen at `frame`:
@@ -39,8 +48,12 @@ export function activeCues(
     .sort((a, b) => a.start - b.start || a.order - b.order);
   const started = timed.filter((t) => t.start <= frame);
 
-  const latestMain = started.filter((t) => isMain(t.cue)).at(-1);
+  const startedMains = started.filter((t) => isMain(t.cue));
+  const latestMain = startedMains.at(-1);
   const main = latestMain && frame < latestMain.end ? latestMain.cue : undefined;
+  const before = startedMains.at(-2);
+  const previous =
+    main && before && frame - latestMain!.start < OVERLAP_FRAMES && before.end > latestMain!.start ? before.cue : undefined;
 
   const mainStarts = timed.filter((t) => isMain(t.cue)).map((t) => t.start);
   const stickers = started
@@ -57,7 +70,7 @@ export function activeCues(
   const line = currentLine(lines, words, frame);
   const fromCueInLine = line ? faceOf(faces.filter((t) => t.start >= line.startFrame).at(-1)) : undefined;
   const expression = fromCueInLine ?? moodExpression(line?.mood) ?? faceOf(faces.at(-1)) ?? 'happy';
-  return { main, stickers, expression };
+  return { main, ...(previous ? { previous } : {}), stickers, expression };
 }
 
 /** The script line being spoken at `frame` (the line of the latest started word) and its start frame. */

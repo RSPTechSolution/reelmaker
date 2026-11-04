@@ -35,6 +35,8 @@ export function defaultBlock(type: BlockType): Block {
       return { type, items: [''] };
     case 'expression':
       return { type, expression: 'happy' };
+    case 'scene':
+      return { type, pose: 'explain' };
   }
 }
 

@@ -44,6 +44,68 @@ export type Line = z.infer<typeof Line>;
 export const Expression = z.enum(['happy', 'thinking', 'surprised', 'wink', 'excited', 'laughing', 'shocked', 'sad']);
 export type Expression = z.infer<typeof Expression>;
 
+/** Whole look of a reel (missing = 'classic', today's brand look). */
+export const ThemeId = z.enum([
+  'classic',
+  'stickman',
+  'objects',
+  'chalkboard',
+  'comic',
+  'neon',
+  'paper',
+  'notebook',
+  'bold',
+  'news',
+  'bollywood',
+]);
+export type ThemeId = z.infer<typeof ThemeId>;
+
+/** Stickman poses a scene block can act out. */
+export const Pose = z.enum([
+  'thinking',
+  'pointing',
+  'shrug',
+  'running',
+  'celebrate',
+  'facepalm',
+  'explain',
+  'laptop',
+  'wave',
+  'sad',
+  'shocked',
+  'idea',
+]);
+export type Pose = z.infer<typeof Pose>;
+
+/** Drawn objects a scene block can show. */
+export const Prop = z.enum([
+  'phone',
+  'coins',
+  'rocket',
+  'chartUp',
+  'chartDown',
+  'clock',
+  'bulb',
+  'heart',
+  'lock',
+  'moneyBag',
+  'trophy',
+  'warning',
+  'gift',
+  'camera',
+  'laptop',
+  'book',
+  'fire',
+  'star',
+  'check',
+  'cross',
+  'calendar',
+  'chat',
+  'search',
+  'target',
+]);
+export type Prop = z.infer<typeof Prop>;
+
 export const Block = z.discriminatedUnion('type', [
   z.object({ type: z.literal('title'), text: z.string() }),
   z.object({ type: z.literal('card'), title: z.string(), body: z.string().optional(), icon: z.string().optional() }),
@@ -56,6 +118,13 @@ export const Block = z.discriminatedUnion('type', [
   z.object({ type: z.literal('sticker'), text: z.string() }),
   z.object({ type: z.literal('list'), items: z.array(z.string()).min(1).max(5) }),
   z.object({ type: z.literal('expression'), expression: Expression }),
+  /** Acted-out drawing: a stickman pose and/or up to 3 objects, with optional heading text. */
+  z.object({
+    type: z.literal('scene'),
+    pose: Pose.optional(),
+    props: z.array(Prop).max(3).optional(),
+    text: z.string().optional(),
+  }),
 ]);
 export type Block = z.infer<typeof Block>;
 export type BlockType = Block['type'];
@@ -64,13 +133,24 @@ export type BlockType = Block['type'];
 export const Anim = z.enum(['pop', 'slide', 'zoom', 'bounce', 'typewriter']);
 export type Anim = z.infer<typeof Anim>;
 
-export const Cue = z.object({
-  id: SafeId,
-  atWord: z.number().int().min(0),
-  untilWord: z.number().int().min(0).optional(),
-  anim: Anim.optional(),
-  block: Block,
-});
+export const SCENE_EMPTY = 'scene needs a pose, a prop or text';
+
+/** A scene block must show something. */
+export function sceneIsEmpty(block: Block): boolean {
+  return block.type === 'scene' && !block.pose && !block.props?.length && !block.text?.trim();
+}
+
+export const Cue = z
+  .object({
+    id: SafeId,
+    atWord: z.number().int().min(0),
+    untilWord: z.number().int().min(0).optional(),
+    anim: Anim.optional(),
+    block: Block,
+  })
+  .superRefine((cue, ctx) => {
+    if (sceneIsEmpty(cue.block)) ctx.addIssue({ code: 'custom', path: ['block'], message: `cue ${cue.id}: ${SCENE_EMPTY}` });
+  });
 export type Cue = z.infer<typeof Cue>;
 
 export const VoiceSettings = z.object({
@@ -128,6 +208,7 @@ export const Reel = z
     coverFrame: z.number().int().min(0).optional(),
     audio: AudioSettings.optional(),
     effects: EffectSettings.optional(),
+    theme: ThemeId.optional(),
     hashes: z.object({ voice: z.string().optional(), timing: z.string().optional() }),
     createdAt: z.string(),
     updatedAt: z.string(),

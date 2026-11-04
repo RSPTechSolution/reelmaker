@@ -228,6 +228,24 @@ describe('runAgent', () => {
     expect(saved.effects?.transition).toBe('zoom');
   });
 
+  it('keeps the reel theme if the agent leaves it out', async () => {
+    const reel = await savedReel();
+    await saveReel({ ...reel, theme: 'neon' });
+    const { spawnFn } = fakeClaude([
+      {
+        lines: [done],
+        write: async (file) => {
+          const { theme: _t, ...rest } = JSON.parse(readFileSync(file, 'utf8'));
+          await writeFile(file, JSON.stringify({ ...rest, title: 'No theme in edit' }));
+        },
+      },
+    ]);
+    expect((await runAgent({ reelId: reel.id, mode: 'scenes', onText: () => {}, spawnFn })).ok).toBe(true);
+    const saved = await getReel(reel.id);
+    expect(saved.title).toBe('No theme in edit');
+    expect(saved.theme).toBe('neon');
+  });
+
   it('reports claude missing', async () => {
     const reel = await savedReel();
     const err = Object.assign(new Error('spawn claude ENOENT'), { code: 'ENOENT' });

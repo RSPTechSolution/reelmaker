@@ -166,9 +166,10 @@ async function readAgentEdit(id: string, backup: Reel): Promise<{ ok: true; reel
     id: backup.id,
     hashes: backup.hashes,
     createdAt: backup.createdAt,
-    // owner's music/effect choices survive an agent that rewrites the file without them
+    // owner's music/effect/theme choices survive an agent that rewrites the file without them
     ...(edit.audio === undefined && backup.audio ? { audio: backup.audio } : {}),
     ...(edit.effects === undefined && backup.effects ? { effects: backup.effects } : {}),
+    ...(edit.theme === undefined && backup.theme ? { theme: backup.theme } : {}),
   };
   const parsed = Reel.safeParse(merged);
   if (parsed.success) return { ok: true, reel: parsed.data };

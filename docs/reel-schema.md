@@ -17,7 +17,8 @@ Every reel lives in `data/reels/<id>/reel.json`. The server validates it with zo
 | `keywords` | string[] | Caption words shown in the accent colour (case-insensitive match against caption words). |
 | `coverFrame` | integer ≥ 0, optional | Frame used for the cover PNG. |
 | `audio` | optional `{sfx, sfxVolume, music?: {track, volume}}` | Sound effects on/off and volume (0–1); background track from the music library (`builtin-lofi.wav`, `builtin-upbeat.wav`, `builtin-dramatic.wav` or the owner's `upload-….mp3`). Default: effects on at 0.6, no music. |
-| `effects` | optional `{transition, captions, emotion}` | Scene transition `none`/`slide`/`whip`/`zoom`, caption style `color`/`pop`/`bounce`, emotion effects on/off (shake on shocked lines, confetti on excited lines, zoom punch on keywords). Default: slide, pop, on. |
+| `effects` | optional `{transition, captions, emotion}` | Scene transition `none`/`slide`/`whip`/`zoom`, caption style `color`/`pop`/`bounce`, emotion effects on/off (shake on shocked lines, confetti on excited lines, zoom punch on keywords). Default: the theme's transition and caption style, emotion on. |
+| `theme` | optional theme name | The reel's whole look (see **Themes**). Missing = `classic`. Set by the owner; keep it as it is. |
 | `hashes` | `{voice?: string, timing?: string}` | Set by the server. **Never edit.** |
 | `createdAt`, `updatedAt` | ISO date string | Set by the server. |
 
@@ -60,8 +61,77 @@ Words are numbered from **0** across the whole script, in order, using `caption`
 | `sticker` | `text` | Small overlay that sits on top of the main block (max 1–2 per reel). |
 | `list` | `items` (1–5 strings) | Short recap. |
 | `expression` | `expression`: `happy` \| `thinking` \| `surprised` \| `wink` \| `excited` \| `laughing` \| `shocked` \| `sad` | Changes the mascot's face; shows nothing else. |
+| `scene` | `pose?`, `props?` (0–3), `text?` — at least one | Drawings acting out the words (see **Scene block**). |
 
-`title`, `card`, `bigNumber` and `list` are **main** blocks: each new one replaces the previous one. `sticker` and `expression` do not replace anything.
+`title`, `card`, `bigNumber`, `list` and `scene` are **main** blocks: each new one replaces the previous one. `sticker` and `expression` do not replace anything.
+
+## Themes (`theme`)
+
+The whole look of the reel. Missing = `classic`. Changing the theme never changes the voice or captions.
+
+| theme | look |
+|---|---|
+| `classic` | **Classic** — your brand colours, rounded cards and the mascot |
+| `stickman` | **Stickman story** — white paper, black marker lines that draw themselves, a stickman acting out the idea *(drawing-led: most main cues are `scene` blocks)* |
+| `objects` | **Animated objects** — motion graphics: bright flat icons and shapes that fly in, bounce and orbit *(drawing-led: most main cues are `scene` blocks)* |
+| `chalkboard` | **Chalkboard** — dark green board, chalk writing and drawings, a teacher explaining *(drawing-led: most main cues are `scene` blocks)* |
+| `comic` | **Comic** — comic panels, halftone dots, speech bubbles and BOOM-style bursts |
+| `neon` | **Neon tech** — dark background with a glowing grid and neon outlines, for tech and AI topics |
+| `paper` | **Paper cut-out** — textured paper layers with soft shadows sliding in, like a handmade collage |
+| `notebook` | **Notebook doodle** — ruled copy page, blue pen doodles and highlighter, like student notes *(drawing-led: most main cues are `scene` blocks)* |
+| `bold` | **Bold typography** — no pictures: giant words that slam, stretch and stack on solid colour |
+| `news` | **Breaking news** — news studio graphics: headline bars, a ticker and a BREAKING flash |
+| `bollywood` | **Retro Bollywood** — old film poster: bold lettering, sunburst rays, warm colours and film grain |
+
+## Scene block
+
+```
+{ "type": "scene", "pose": "thinking", "props": ["coins", "clock"], "text": "Paisa ya time?" }
+```
+
+Acts out what is being said: a stickman `pose`, up to **3** `props` (objects) and an optional short `text` heading. At least one of the three is required. Each theme draws them in its own style (marker, chalk, neon, …); `bold` shows only the `text`. Use **only** the names below and pick them to match the words.
+
+| pose | means |
+|---|---|
+| `thinking` | a question, wondering, planning |
+| `pointing` | look at this, a tip, "you" / call to action |
+| `shrug` | confusion, "pata nahi", nobody knows |
+| `running` | speed, hurry, quick results, chasing a goal |
+| `celebrate` | success, a win, excitement |
+| `facepalm` | a mistake, "galti", something silly |
+| `explain` | teaching, explaining a step |
+| `laptop` | working, coding, using an app or AI tool |
+| `wave` | hello, intro, goodbye |
+| `sad` | a problem, loss, disappointment |
+| `shocked` | a surprise, an unbelievable fact |
+| `idea` | an idea, a trick, the "aha" moment |
+
+| prop | means |
+|---|---|
+| `phone` | mobile, apps, social media, reels |
+| `coins` | money, price, earning, saving |
+| `rocket` | growth, launch, going viral, fast |
+| `chartUp` | increase, profit, more views |
+| `chartDown` | decrease, loss, falling numbers |
+| `clock` | time, minutes, deadline, waiting |
+| `bulb` | idea, tip, smart trick |
+| `heart` | love, likes, health |
+| `lock` | security, privacy, password, locked |
+| `moneyBag` | big money, salary, savings, rich |
+| `trophy` | winning, best, number one, achievement |
+| `warning` | danger, mistake to avoid, careful |
+| `gift` | free, bonus, surprise |
+| `camera` | photo, video, shooting, content |
+| `laptop` | computer, work, online, software |
+| `book` | learning, study, reading, course |
+| `fire` | trending, hot, viral, intense |
+| `star` | best, rating, special, important |
+| `check` | yes, correct, done, do this |
+| `cross` | no, wrong, avoid, do not |
+| `calendar` | days, dates, schedule, every day |
+| `chat` | talking, comments, messages, conversation |
+| `search` | search, finding, research, Google |
+| `target` | goal, aim, focus, exact result |
 
 ## VoiceSettings
 

@@ -40,3 +40,11 @@ describe('effects schema', () => {
     });
   });
 });
+
+describe('built-in sound version', () => {
+  it('matches the Python generator, so the server knows when to regenerate', async () => {
+    const { AUDIO_ASSETS_VERSION } = await import('./effects.ts');
+    const py = readFileSync(path.join(here, '..', '..', '..', 'py', 'ops', 'assets.py'), 'utf8');
+    expect(py).toContain(`ASSETS_VERSION = ${AUDIO_ASSETS_VERSION}`);
+  });
+});

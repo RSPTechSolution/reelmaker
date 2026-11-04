@@ -12,7 +12,7 @@ function header(reel: Reel): string {
     `You are editing one Hinglish reel for the owner.`,
     `First read ${SKILL_FILE} (house style and learned rules) and ${SCHEMA_DOC} (the reel.json format).`,
     `Then read and edit ONLY this file: ${file}`,
-    `Keep it valid JSON that follows ${SCHEMA_DOC}. Never change "id", "hashes", "createdAt" or "updatedAt".`,
+    `Keep it valid JSON that follows ${SCHEMA_DOC}. Never change "id", "hashes", "createdAt" or "updatedAt", and keep "audio" and "effects" exactly as they are unless the owner asks to change them.`,
     `Reply to the owner in one or two short Hinglish sentences saying what you changed.`,
     ``,
     `Reel: "${reel.title}" — topic: ${reel.topic}${reel.hook ? ` — hook: ${reel.hook}` : ''} — target ${reel.targetSeconds} s.`,

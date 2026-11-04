@@ -335,6 +335,8 @@
 
 - [x] **Step 1:** Failing tests for schema, assets op, audio routes, the pure video helpers, CueEditor entrance. - [x] **Step 2:** FAIL. - [x] **Step 3:** Implement. - [x] **Step 4:** PASS; render stills of transitions/effects; render a short MP4 with SFX + music and check its audio. - [x] **Step 5:** Commit `feat: sound effects, music and animation effects`.
 
+**Task 12c follow-up (2026-11-04, owner feedback):** the whoosh was harsh (75% of its energy above 3 kHz); owner picked replacements by ear: **swipe** (scene changes and end card, played a little quieter), **tick** (first title), **bubble** (stickers). Built-in sounds carry a version (`ASSETS_VERSION` in `py/ops/assets.py` = `AUDIO_ASSETS_VERSION` in shared, test-enforced); older sound folders are regenerated automatically. Bugs fixed: the music dropdown silently showed only "None" while the list loaded (now "Loading tracks…", and errors show in the panel with Retry); quick successive panel changes could overwrite each other; an agent rewriting `reel.json` could drop `audio`/`effects` (now restored from the backup, and the prompt says to keep them). `npm run setup` now also creates the built-in sounds (`py/make_sounds.py`). README rewritten as a fresh-setup guide.
+
 ### Task 13: End-to-end verification on Windows
 
 **Files:**

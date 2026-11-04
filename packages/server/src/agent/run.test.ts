@@ -205,6 +205,29 @@ describe('runAgent', () => {
     expect((await getReel(reel.id)).title).toBe('Kept');
   });
 
+  it('keeps the owner music and effect settings if the agent leaves them out', async () => {
+    const reel = await savedReel();
+    await saveReel({
+      ...reel,
+      audio: { sfx: true, sfxVolume: 0.4, music: { track: 'builtin-upbeat.wav', volume: 0.3 } },
+      effects: { transition: 'zoom', captions: 'bounce', emotion: true },
+    });
+    const { spawnFn } = fakeClaude([
+      {
+        lines: [done],
+        write: async (file) => {
+          const { audio: _a, effects: _e, ...rest } = JSON.parse(readFileSync(file, 'utf8'));
+          await writeFile(file, JSON.stringify({ ...rest, title: 'Agent rewrote everything' }));
+        },
+      },
+    ]);
+    expect((await runAgent({ reelId: reel.id, mode: 'scenes', onText: () => {}, spawnFn })).ok).toBe(true);
+    const saved = await getReel(reel.id);
+    expect(saved.title).toBe('Agent rewrote everything');
+    expect(saved.audio?.music?.track).toBe('builtin-upbeat.wav');
+    expect(saved.effects?.transition).toBe('zoom');
+  });
+
   it('reports claude missing', async () => {
     const reel = await savedReel();
     const err = Object.assign(new Error('spawn claude ENOENT'), { code: 'ENOENT' });

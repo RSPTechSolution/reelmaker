@@ -1,31 +1,152 @@
 # Reel Maker
 
-Local app that turns a topic into an animated Hinglish reel (1080×1920, 30 fps), with Claude Code as the agent.
+Turn a topic into an animated **Hinglish reel** (1080×1920, 30 fps, up to 60 s) on your own Windows PC:
+script → voice → word-synced captions → animated scenes with music and sound effects → MP4.
 
-## Windows setup
+Everything runs locally and for free. The only online pieces are Claude Code (your own login) and
+one-time model downloads.
 
-Install these first:
+---
 
-1. **Node.js 22.18 or newer** — LTS installer from https://nodejs.org. Scripts run TypeScript using Node's built-in type stripping, so Node 20 is not enough.
-2. **Python 3.12** — from https://www.python.org/downloads/. Tick **"Add python.exe to PATH"** in the installer. Kokoro does not support 3.13+. Other Python versions can stay installed; setup uses `py -3.12`.
-3. **espeak-ng** — download the `.msi` from https://github.com/espeak-ng/espeak-ng/releases and run it. Kokoro needs it to speak Hindi.
-4. **Claude Code** — install it, then run `claude` once in a terminal and log in.
+## Fresh setup on Windows
 
-Then, in this folder:
+Plan for **about 5 GB of disk** and **15–30 minutes** the first time (mostly downloads).
+Works on CPU only; no graphics card needed.
 
+### 1. Install the tools
+
+Open **PowerShell** and run these one by one (or use the download links):
+
+| Tool | Install | Notes |
+|---|---|---|
+| **Git** | `winget install Git.Git` | to download this project |
+| **Node.js 22.18 or newer** | `winget install OpenJS.NodeJS.LTS` | Node 20 is too old |
+| **Python 3.12** | `winget install Python.Python.3.12` | must be 3.12 — the voice engine (Kokoro) does not support 3.13+. Other Python versions can stay installed. |
+| **espeak-ng** | download the `.msi` from https://github.com/espeak-ng/espeak-ng/releases and run it | pronunciation helper for the Hindi voice |
+| **Claude Code** | install from https://docs.claude.com/claude-code, then run `claude` once and **log in** | writes scripts and plans scenes; uses your own Claude plan |
+
+**Close and reopen PowerShell** after installing, so the new commands are found.
+
+### 2. Get the project
+
+```powershell
+git clone <this repository's URL> reelmaker
+cd reelmaker
 ```
-npm run doctor   # checks the four tools above and says what to install
-npm run setup    # npm install, Python venv, model downloads, default brand/mascot
+
+### 3. Check the tools
+
+```powershell
+npm run doctor
 ```
 
-`npm run setup` downloads Kokoro and whisper `small` on the first run (a few hundred MB).
+Every row should say `OK`. If one says `FAIL`, the line under the table tells you exactly what to install.
 
-## Scripts
+### 4. Install everything else
+
+```powershell
+npm run setup
+```
+
+This takes a while the first time. It:
+
+1. installs the app's JavaScript packages,
+2. creates a Python environment in `py\.venv` (with Python 3.12) and installs the voice and caption engines,
+3. downloads the voice model (Kokoro, Hindi voices) and the caption model (Whisper `small`),
+4. creates the built-in sound effects and music beats,
+5. creates your default brand and mascot in `data\`.
+
+It is safe to run again; it skips what is already done.
+
+### 5. Start the app
+
+```powershell
+npm run dev
+```
+
+Open **http://localhost:5173** in your browser. Keep the PowerShell window open while you work;
+press **Ctrl+C** in it to stop the app.
+
+The **first render** downloads a headless Chrome (about 100 MB) and takes longer; later renders are faster.
+
+---
+
+## Making your first reel
+
+1. **Reels** page → type a topic (for example *AI se video kaise banaye — 3 tips*), pick a length, click
+   **Create reel and write script**. The agent writes a Hinglish script with a hook and a mood for each line.
+2. **Script** — edit any line. Each line is written twice (Roman caption, Devanagari spoken) with the same
+   number of words; the row turns red if they differ. Pick a **mood** per line (excited, curious, serious,
+   funny, calm, shocked) — it changes the voice pace, the pause after the line and the mascot's face.
+3. **Voice** — choose a voice and speed, click **Generate voice**. Redo single lines with **↻ Redo**,
+   or upload your own recording instead.
+4. **Captions** — click **Sync captions**. Words with a dotted underline were placed by estimate.
+   Click **★** next to a word to make it a keyword (accent colour).
+5. **Scenes** — click **Ask agent** to plan the animated cards, numbers and mascot faces, then adjust them.
+   In **Music & effects** choose a background beat (or upload your own track), sound effects, the scene
+   transition, the caption style and emotion effects.
+6. **Review** — **Make contact sheet** shows nine moments of the reel; ask the agent for fixes
+   (*"number aur bada karo"*).
+7. **Render** — choose the cover frame, click **Render MP4**, then **Download MP4** and **Download cover**.
+
+**Brand** sets colours, font and your handle. **Mascot** sets the robot's colours — or choose
+**My character** and upload a transparent PNG of yourself.
+
+Upload only music you have the rights to; Instagram may mute reels with unlicensed tracks.
+The built-in beats and sound effects are generated by the app and free to use.
+
+---
+
+## Where your files are
+
+| What | Where |
+|---|---|
+| Your reels (script, voice, captions, renders) | `data\reels\<reel>\` — the MP4 and cover are in `out\` |
+| Brand, mascot, your character pictures | `data\brand.json`, `data\mascot.json`, `data\mascot\` |
+| Music library and sound effects | `data\audio\` |
+| What the agent has learned from your reviews | `.claude\skills\reels\SKILL.md` |
+
+Back up the `data` folder to keep your work. It is not part of the project's Git history.
+
+---
+
+## Updating
+
+```powershell
+git pull
+npm run setup
+```
+
+Then **restart** the app (Ctrl+C, `npm run dev`) — the app does not reload server changes on its own.
+
+---
+
+## Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| `npm run doctor` says Python 3.12 is missing | `winget install Python.Python.3.12`, reopen PowerShell. Check with `py -3.12 --version`. |
+| Voice fails with "espeak-ng not found" | install the espeak-ng `.msi` (step 1), reopen PowerShell, restart the app |
+| The agent says "Claude Code not found" or "Please run /login" | run `claude` in PowerShell and log in, then try again |
+| `Port 5173 is already in use` | the app is already running in another window — use that one, or stop it with Ctrl+C there |
+| A job seems stuck or the page says "Lost connection" | restart the app (Ctrl+C, `npm run dev`); jobs that were running must be started again |
+| The first render is very slow or fails once | it is downloading headless Chrome; try again when it finishes |
+| "The script changed after the voice was made" | regenerate the voice, then sync captions again — render is blocked until both match the script |
+| Many caption words are estimated (under 70 % heard) | regenerate the voice a little slower, or check the spoken (Devanagari) text for typos |
+
+---
+
+## For developers
 
 | Command | What it does |
 |---|---|
-| `npm run doctor` | Prints a tool table; exits 1 if anything is missing |
-| `npm run setup` | One-time install |
-| `npm run dev` | Starts the server and web app |
-| `npm test` | Runs the tests |
-| `npm run typecheck` | Type-checks the TypeScript |
+| `npm run doctor` | tool check; exits 1 if anything is missing |
+| `npm run setup` | one-time install (safe to re-run) |
+| `npm run dev` | server on 127.0.0.1:4000 + web app on :5173 |
+| `npm run dev:watch` | same, but restarts the server when its code changes (can interrupt running jobs) |
+| `npm test` | TypeScript tests (`py\.venv\Scripts\python -m pytest py\tests` for Python; add `-m slow` for model tests) |
+| `npm run typecheck` | type-checks all packages |
+
+- Design: `docs/superpowers/specs/2026-11-03-reelmaker-design.md`
+- Plan: `docs/superpowers/plans/2026-11-03-reelmaker.md`
+- `reel.json` format: `docs/reel-schema.md`

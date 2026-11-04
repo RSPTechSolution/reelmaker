@@ -11,7 +11,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const example = (): Reel =>
   JSON.parse(readFileSync(path.join(here, '..', '..', '..', 'shared', 'fixtures', 'example-reel.json'), 'utf8'));
 const library = {
-  sfx: ['whoosh', 'pop', 'ding', 'boom', 'riser'],
+  sfx: ['swipe', 'tick', 'bubble', 'ding', 'boom', 'riser'],
   music: [
     { file: 'builtin-lofi.wav', label: 'Lo-fi chill', kind: 'builtin' as const },
     { file: 'upload-my-song-1a2b3c4d.mp3', label: 'My song', kind: 'upload' as const },
@@ -19,10 +19,21 @@ const library = {
 };
 afterEach(cleanup);
 
-function setup(reel = example()) {
+function setup(reel = example(), lib: typeof library | null = library, libraryError: string | null = null) {
   const onSave = vi.fn(async (r: Reel) => r);
-  render(<SoundPanel reel={reel} library={library} onSave={onSave} onUpload={vi.fn()} onDelete={vi.fn()} />);
-  return onSave;
+  const onRetry = vi.fn();
+  render(
+    <SoundPanel
+      reel={reel}
+      library={lib}
+      libraryError={libraryError}
+      onRetry={onRetry}
+      onSave={onSave}
+      onUpload={vi.fn()}
+      onDelete={vi.fn()}
+    />,
+  );
+  return Object.assign(onSave, { onRetry });
 }
 
 describe('SoundPanel', () => {
@@ -52,5 +63,28 @@ describe('SoundPanel', () => {
     expect(onSave.mock.calls[1][0].effects!.emotion).toBe(false);
     fireEvent.click(screen.getByLabelText('Sound effects'));
     expect(onSave.mock.calls[2][0].audio!.sfx).toBe(false);
+  });
+
+  it('says the tracks are loading instead of silently offering only None', () => {
+    setup(example(), null);
+    const select = screen.getByLabelText('Background music') as HTMLSelectElement;
+    expect(select.disabled).toBe(true);
+    expect([...select.options].map((o) => o.text)).toEqual(['Loading tracks…']);
+  });
+
+  it('shows a load failure inside the panel with a retry', () => {
+    const onSave = setup(example(), null, 'audio worker stopped');
+    expect(screen.getByRole('alert').textContent).toContain('Could not load the music list: audio worker stopped');
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(onSave.onRetry).toHaveBeenCalled();
+  });
+
+  it('quick successive changes keep each other (no stale overwrite before the reel reloads)', () => {
+    const onSave = setup();
+    fireEvent.change(screen.getByLabelText('Background music'), { target: { value: 'builtin-lofi.wav' } });
+    fireEvent.change(screen.getByLabelText('Scene transition'), { target: { value: 'zoom' } });
+    const second = onSave.mock.calls[1][0];
+    expect(second.audio!.music).toEqual({ track: 'builtin-lofi.wav', volume: 0.25 });
+    expect(second.effects!.transition).toBe('zoom');
   });
 });

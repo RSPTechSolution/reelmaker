@@ -89,6 +89,10 @@ async function main() {
   if (existsSync(warmup)) await runInherit(VENV_PY, [warmup]);
   else console.log('skipped: py/warmup.py not present yet');
 
+  step('Built-in sound effects and beats');
+  if (existsSync(VENV_PY)) await runInherit(VENV_PY, [path.join(ROOT, 'py', 'make_sounds.py'), DATA]);
+  else console.log('skipped: Python environment not ready');
+
   step('Default brand and mascot');
   await mkdir(path.join(DATA, 'reels'), { recursive: true });
   const defaultsFile = path.join(ROOT, 'packages', 'shared', 'src', 'defaults.ts');

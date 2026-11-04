@@ -3,6 +3,7 @@ import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { AUDIO_ASSETS_VERSION } from '@reelmaker/shared';
 import { buildApp } from '../app.ts';
 import { DATA_DIR } from '../paths.ts';
 
@@ -16,8 +17,9 @@ const worker = {
     const dir = (args as { dir: string }).dir;
     await mkdir(path.join(dir, 'sfx'), { recursive: true });
     await mkdir(path.join(dir, 'music'), { recursive: true });
-    for (const s of ['whoosh', 'pop', 'ding', 'boom', 'riser']) await writeFile(path.join(dir, 'sfx', `${s}.wav`), 'RIFF');
+    for (const s of ['swipe', 'tick', 'bubble', 'ding', 'boom', 'riser']) await writeFile(path.join(dir, 'sfx', `${s}.wav`), 'RIFF');
     for (const m of ['lofi', 'upbeat', 'dramatic']) await writeFile(path.join(dir, 'music', `builtin-${m}.wav`), 'RIFF');
+    await writeFile(path.join(dir, 'version.txt'), String(AUDIO_ASSETS_VERSION)); // as the real op does
     return { sfx: [], music: [], labels: { lofi: 'Lo-fi chill', upbeat: 'Upbeat pop', dramatic: 'Dramatic' } } as T;
   },
 };
@@ -46,7 +48,7 @@ describe('audio library', () => {
     const res = await app.inject({ method: 'GET', url: '/api/audio' });
     expect(res.statusCode).toBe(200);
     const body = res.json();
-    expect(body.sfx).toEqual(['whoosh', 'pop', 'ding', 'boom', 'riser']);
+    expect(body.sfx).toEqual(['swipe', 'tick', 'bubble', 'ding', 'boom', 'riser']);
     expect(body.music).toEqual([
       { file: 'builtin-lofi.wav', label: 'Lo-fi chill', kind: 'builtin' },
       { file: 'builtin-upbeat.wav', label: 'Upbeat pop', kind: 'builtin' },
@@ -55,7 +57,7 @@ describe('audio library', () => {
     expect(calls.filter((c) => c.op === 'assets')).toHaveLength(1);
     await app.inject({ method: 'GET', url: '/api/audio' });
     expect(calls.filter((c) => c.op === 'assets')).toHaveLength(1); // not regenerated
-    expect((await app.inject({ method: 'GET', url: '/audio/sfx/pop.wav' })).statusCode).toBe(200);
+    expect((await app.inject({ method: 'GET', url: '/audio/sfx/swipe.wav' })).statusCode).toBe(200);
   });
 
   it('uploads my own tracks under a safe name and lists them', async () => {

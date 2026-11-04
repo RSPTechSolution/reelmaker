@@ -43,26 +43,46 @@ function Volume({ label, value, onCommit }: { label: string; value: number; onCo
 export function SoundPanel({
   reel,
   library,
+  libraryError = null,
+  onRetry = () => {},
   onSave,
   onUpload,
   onDelete,
 }: {
   reel: Reel;
+  /** null while the music list is loading */
   library: AudioLibrary | null;
+  libraryError?: string | null;
+  onRetry?: () => void;
   onSave: (reel: Reel) => Promise<unknown> | void;
   onUpload: (file: File) => void;
   onDelete: (file: string) => void;
 }) {
-  const audio = audioSettings(reel);
-  const fx = effectSettings(reel);
+  // Latest settings, updated on every change before the parent reloads the reel, so quick
+  // successive changes build on each other instead of overwriting the previous one.
+  const latest = useRef(reel);
+  const [, rerender] = useState(0);
+  useEffect(() => {
+    latest.current = reel;
+    rerender((n) => n + 1);
+  }, [reel]);
+  const current = latest.current;
+  const audio = audioSettings(current);
+  const fx = effectSettings(current);
+  const save = (next: Reel) => {
+    latest.current = next;
+    rerender((n) => n + 1);
+    return onSave(next);
+  };
   const listen = useRef<HTMLAudioElement | null>(null);
   const [playing, setPlaying] = useState<string | null>(null);
   useEffect(() => () => listen.current?.pause(), []);
 
-  const saveAudio = (next: AudioSettings) => onSave({ ...reel, audio: next });
-  const saveFx = (patch: Partial<EffectSettings>) => onSave({ ...reel, effects: { ...fx, ...patch } });
+  const saveAudio = (next: AudioSettings) => save({ ...latest.current, audio: next });
+  const saveFx = (patch: Partial<EffectSettings>) =>
+    save({ ...latest.current, effects: { ...effectSettings(latest.current), ...patch } });
   const setTrack = (file: string) => {
-    const { music: _old, ...rest } = audio;
+    const { music: _old, ...rest } = audioSettings(latest.current);
     saveAudio(file ? { ...rest, music: { track: file, volume: audio.music?.volume ?? DEFAULT_MUSIC_VOLUME } } : rest);
   };
   const preview = (file: string) => {
@@ -86,13 +106,25 @@ export function SoundPanel({
       <div className="flex flex-wrap items-end gap-3">
         <label className="flex w-60 flex-col gap-1 text-xs text-ink-soft">
           Background music
-          <select className="field py-1.5 text-sm" aria-label="Background music" value={track} onChange={(e) => setTrack(e.target.value)}>
-            <option value="">None</option>
-            {library?.music.map((m) => (
-              <option key={m.file} value={m.file}>
-                {m.kind === 'builtin' ? `${m.label} (built in)` : m.label}
-              </option>
-            ))}
+          <select
+            className="field py-1.5 text-sm"
+            aria-label="Background music"
+            value={library ? track : ''}
+            disabled={!library}
+            onChange={(e) => setTrack(e.target.value)}
+          >
+            {library ? (
+              <>
+                <option value="">None</option>
+                {library.music.map((m) => (
+                  <option key={m.file} value={m.file}>
+                    {m.kind === 'builtin' ? `${m.label} (built in)` : m.label}
+                  </option>
+                ))}
+              </>
+            ) : (
+              <option value="">Loading tracks…</option>
+            )}
           </select>
         </label>
         {track ? (
@@ -122,6 +154,14 @@ export function SoundPanel({
           </button>
         ) : null}
       </div>
+      {libraryError ? (
+        <p role="alert" className="flex items-center gap-3 text-sm font-semibold text-sindoor">
+          Could not load the music list: {libraryError}
+          <button className="btn-quiet px-2 py-1 text-xs" onClick={onRetry}>
+            Retry
+          </button>
+        </p>
+      ) : null}
       <p className="text-xs text-ink-soft">
         The music dips while the voice speaks. Upload only music you have the rights to: Instagram may mute reels with
         unlicensed tracks.

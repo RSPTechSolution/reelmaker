@@ -56,14 +56,17 @@ describe('sfxEvents', () => {
   it('fires effects on scene changes, numbers, stickers, shocked lines and the end card', () => {
     const ev = sfxEvents(reel(), words, TOTAL);
     expect(ev.map((e) => [e.frame, e.sound])).toEqual([
-      [0, 'pop'], // first title
-      [45, 'whoosh'], // big number appears
+      [0, 'tick'], // first title
+      [45, 'swipe'], // big number appears
       [69, 'ding'], // ... and lands after counting up
       [75, 'boom'], // shocked line starts (word 5)
-      [120, 'pop'], // sticker
-      [180, 'whoosh'], // card replaces the number
-      [355, 'whoosh'], // into the end card (last 45 frames)
+      [120, 'bubble'], // sticker
+      [180, 'swipe'], // card replaces the number
+      [355, 'swipe'], // into the end card (last 45 frames)
     ]);
+    // the scene-change swipe plays most often, so it sits a little lower than the rest
+    const vol = Object.fromEntries(ev.map((e) => [e.sound, e.volume]));
+    expect(vol.swipe).toBeLessThan(vol.tick);
     for (const e of ev) expect(e.volume).toBeGreaterThan(0);
   });
 

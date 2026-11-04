@@ -27,7 +27,11 @@ export function ScenesStep({
   const [error, setError] = useState<string | null>(null);
   useEffect(() => setCues(reel.cues), [reel.cues]);
   const [library, setLibrary] = useState<AudioLibrary | null>(null);
-  const loadLibrary = () => api.getAudio().then(setLibrary, (e) => setError(String(e?.message ?? e)));
+  const [libraryError, setLibraryError] = useState<string | null>(null);
+  const loadLibrary = () => {
+    setLibraryError(null);
+    return api.getAudio().then(setLibrary, (e) => setLibraryError(e instanceof ApiError ? e.message : String(e?.message ?? e)));
+  };
   useEffect(() => {
     void loadLibrary();
   }, []);
@@ -79,6 +83,8 @@ export function ScenesStep({
       <SoundPanel
         reel={reel}
         library={library}
+        libraryError={libraryError}
+        onRetry={() => void loadLibrary()}
         onSave={saveSound}
         onUpload={(f) =>
           api.uploadMusic(f).then(async (t) => {

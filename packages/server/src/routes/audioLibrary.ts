@@ -4,7 +4,7 @@ import { readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import fastifyStatic from '@fastify/static';
 import type { FastifyInstance } from 'fastify';
-import { AudioFile, SFX_NAMES } from '@reelmaker/shared';
+import { AUDIO_ASSETS_VERSION, AudioFile, SFX_NAMES } from '@reelmaker/shared';
 import { HttpError } from '../errors.ts';
 import { DATA_DIR } from '../paths.ts';
 import { writeJsonAtomic } from '../store.ts';
@@ -47,7 +47,10 @@ let builtinLabels: Record<string, string> = { lofi: 'Lo-fi chill', upbeat: 'Upbe
 
 /** Generate missing built-in sounds once (a few seconds of numpy). Renders call this too. */
 export async function ensureBuiltinAudio(worker: AudioWorker): Promise<void> {
+  const versionFile = path.join(AUDIO_DIR, 'version.txt');
+  const outdated = !existsSync(versionFile) || (await readFile(versionFile, 'utf8')).trim() !== String(AUDIO_ASSETS_VERSION);
   const missing =
+    outdated ||
     SFX_NAMES.some((s) => !existsSync(path.join(AUDIO_DIR, 'sfx', `${s}.wav`))) ||
     BUILTIN.some((m) => !existsSync(path.join(MUSIC_DIR, `builtin-${m}.wav`)));
   if (!missing) return;

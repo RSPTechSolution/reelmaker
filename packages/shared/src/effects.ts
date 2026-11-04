@@ -13,5 +13,7 @@ export function effectSettings(reel: Pick<Reel, 'effects'>): EffectSettings {
   return reel.effects ?? DEFAULT_EFFECTS;
 }
 
-export const SFX_NAMES = ['whoosh', 'pop', 'ding', 'boom', 'riser'] as const;
+export const SFX_NAMES = ['swipe', 'tick', 'bubble', 'ding', 'boom', 'riser'] as const;
+/** Version of the built-in sounds; equals ASSETS_VERSION in py/ops/assets.py. */
+export const AUDIO_ASSETS_VERSION = 2;
 export type SfxName = (typeof SFX_NAMES)[number];

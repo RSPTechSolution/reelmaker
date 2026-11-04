@@ -10,7 +10,11 @@ import numpy as np
 import soundfile as sf
 
 SR = 44100
-SFX = ["whoosh", "pop", "ding", "boom", "riser"]
+# Bump when any built-in sound changes: older folders are regenerated (see assets()).
+# Must equal AUDIO_ASSETS_VERSION in packages/shared/src/effects.ts.
+ASSETS_VERSION = 2
+SFX = ["swipe", "tick", "bubble", "ding", "boom", "riser"]
+OBSOLETE_SFX = ["whoosh", "pop"]  # version 1 names
 MUSIC = ["lofi", "upbeat", "dramatic"]
 LABELS = {"lofi": "Lo-fi chill", "upbeat": "Upbeat pop", "dramatic": "Dramatic"}
 
@@ -53,20 +57,35 @@ def _note_hz(midi):
 # ---------- sound effects ----------
 
 
-def _whoosh(rng):
-    n = int(SR * 0.6)
-    noise = rng.standard_normal(n)
+def _level(x, rms_db=-24.0, peak=0.95):
+    """Set loudness by RMS (not peak), so short and long effects sound equally loud."""
+    rms = np.sqrt(np.mean(x**2))
+    return np.clip(x * (10 ** (rms_db / 20) / rms), -peak, peak) if rms > 0 else x
+
+
+def _swipe(rng):
+    """Short, muted swipe, like a card sliding (owner's pick to replace the hissy whoosh)."""
+    n = int(SR * 0.3)
     t = np.arange(n) / n
-    sweep = 300 + 5000 * np.sin(np.pi * t) ** 2
-    shape = np.sin(np.pi * t) ** 1.5
-    return _norm(_lowpass(noise, sweep) * shape, 0.7)
+    noise = rng.standard_normal(n)
+    dark = _lowpass(_lowpass(noise, 1100), 1100)  # two passes: no hiss
+    band = dark - _lowpass(dark, 300)
+    return _level(band * np.sin(np.pi * t) ** 1.5)
 
 
-def _pop(rng):
-    t = _t(0.14)
-    f = 500 + 900 * (1 - np.exp(-t * 60))
+def _tick(rng):
+    """Gentle wooden tick: a short low tone, no noise at all."""
+    t = _t(0.12)
+    tone = np.sin(2 * np.pi * 520 * t) + 0.35 * np.sin(2 * np.pi * 1040 * t)
+    return _level(tone * np.exp(-t * 45) * np.clip(t / 0.002, 0, 1))
+
+
+def _bubble(rng):
+    """Soft rising 'bloop': a rounded sine sweep."""
+    t = _t(0.22)
+    f = 280 + 420 * (t / t[-1]) ** 1.5
     tone = np.sin(2 * np.pi * np.cumsum(f) / SR)
-    return _norm(tone * _env(len(t), 0.002, 38), 0.8)
+    return _level(tone * np.sin(np.pi * t / t[-1]) ** 1.2)
 
 
 def _ding(rng):
@@ -93,7 +112,7 @@ def _riser(rng):
     return _norm((tone + air) * p**1.6 * (1 - np.clip((p - 0.97) / 0.03, 0, 1)), 0.7)
 
 
-SFX_MAKERS = {"whoosh": _whoosh, "pop": _pop, "ding": _ding, "boom": _boom, "riser": _riser}
+SFX_MAKERS = {"swipe": _swipe, "tick": _tick, "bubble": _bubble, "ding": _ding, "boom": _boom, "riser": _riser}
 
 
 # ---------- drum + synth voices for beats ----------
@@ -210,6 +229,18 @@ def assets(args: dict, progress=None) -> dict:
     root = args["dir"]
     os.makedirs(os.path.join(root, "sfx"), exist_ok=True)
     os.makedirs(os.path.join(root, "music"), exist_ok=True)
+    version_file = os.path.join(root, "version.txt")
+    current = open(version_file, encoding="utf-8").read().strip() if os.path.exists(version_file) else ""
+    if current != str(ASSETS_VERSION):
+        # made by an older version: drop every built-in so it is regenerated (uploads are untouched)
+        for name in SFX + OBSOLETE_SFX:
+            p = os.path.join(root, "sfx", f"{name}.wav")
+            if os.path.exists(p):
+                os.remove(p)
+        for m in MUSIC:
+            p = os.path.join(root, "music", f"builtin-{m}.wav")
+            if os.path.exists(p):
+                os.remove(p)
     jobs = [("sfx", name, f"{name}.wav") for name in SFX] + [("music", m, f"builtin-{m}.wav") for m in MUSIC]
     for k, (kind, name, file) in enumerate(jobs):
         path = os.path.join(root, kind, file)
@@ -220,4 +251,6 @@ def assets(args: dict, progress=None) -> dict:
         rng = np.random.default_rng(sum(map(ord, name)))  # fixed seed per sound
         audio = SFX_MAKERS[name](rng) if kind == "sfx" else _beat(name, rng)
         _write(path, audio)
+    with open(version_file, "w", encoding="utf-8") as f:
+        f.write(str(ASSETS_VERSION))
     return {"sfx": SFX, "music": [f"builtin-{m}.wav" for m in MUSIC], "labels": LABELS}

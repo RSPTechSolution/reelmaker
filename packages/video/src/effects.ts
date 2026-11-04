@@ -36,9 +36,10 @@ export function lineStartFrames(lines: Pick<Line, 'caption' | 'mood'>[], words: 
 // ---------- sound effects ----------
 
 export type SfxEvent = { frame: number; sound: SfxName; volume: number };
-const LEVEL: Record<SfxName, number> = { whoosh: 0.7, pop: 0.8, ding: 0.7, boom: 1, riser: 0.6 };
+// swipe plays on every scene change, so it sits a little lower than the rest
+const LEVEL: Record<SfxName, number> = { swipe: 0.6, tick: 0.8, bubble: 0.8, ding: 0.7, boom: 1, riser: 0.6 };
 
-/** Which sound effect plays when: scene changes, numbers landing, stickers, shocked lines, end card. */
+/** Which sound effect plays when: tick on the first title, swipe on scene changes, bubble on stickers, ding when a number lands, boom on shocked lines. */
 export function sfxEvents(reel: Reel, words: WordTiming[], total: number): SfxEvent[] {
   const audio = audioSettings(reel);
   if (!audio.sfx) return [];
@@ -47,18 +48,18 @@ export function sfxEvents(reel: Reel, words: WordTiming[], total: number): SfxEv
   let sawMain = false;
   for (const { c, start } of timed) {
     if (isMain(c.block.type)) {
-      raw.push({ frame: start, sound: sawMain ? 'whoosh' : 'pop' });
+      raw.push({ frame: start, sound: sawMain ? 'swipe' : 'tick' });
       sawMain = true;
       if (c.block.type === 'bigNumber') {
         const counts = countFrom(c.block.to) !== c.block.to;
         raw.push({ frame: start + (counts ? COUNT_FRAMES : 4), sound: 'ding' });
       }
     } else if (c.block.type === 'sticker') {
-      raw.push({ frame: start, sound: 'pop' });
+      raw.push({ frame: start, sound: 'bubble' });
     }
   }
   for (const l of lineStartFrames(reel.lines, words)) if (l.mood === 'shocked') raw.push({ frame: l.start, sound: 'boom' });
-  raw.push({ frame: Math.max(0, total - END_CARD_FRAMES), sound: 'whoosh' });
+  raw.push({ frame: Math.max(0, total - END_CARD_FRAMES), sound: 'swipe' });
 
   const out: SfxEvent[] = [];
   for (const e of raw.sort((a, b) => a.frame - b.frame)) {

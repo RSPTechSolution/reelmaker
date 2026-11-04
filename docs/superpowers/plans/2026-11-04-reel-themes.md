@@ -291,9 +291,10 @@ Message: `feat(video): stickman skeleton, poses and blending`
   - everything else pops
 
   By frame 30, everything is at rest (`x=y=rotate=0`, `scale=1`, `opacity=1`, `progress=1`) apart from the looping idles. The idle loops are heart, fire, clock and coins glint. Their idle amplitude stays ≤ 6 % scale and ≤ 6 px.
+- Also produces (`motion.ts`): `SETTLE_FRAMES = 30`, `IDLE_PROPS: Prop[]` (heart, fire, coins, clock) — named by the tests.
 - Produces (`props.tsx`): `PropDrawing: React.FC<{ prop: Prop; ink: InkStyle; since: number; size?: number }>`. Draws an SVG in a 200 × 200 box and uses no Remotion hooks.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 - `every prop renders in every ink`: Prop × theme ink, `renderToStaticMarkup` contains `<svg`.
 - `motions settle by frame 30`: for every prop, `propMotion(p, 30)` is within the idle tolerance of rest.
@@ -302,19 +303,19 @@ Message: `feat(video): stickman skeleton, poses and blending`
 - `rocket rises`: y decreases from 0 to 6.
 - `deterministic`: same input, same output.
 
-- [ ] **Step 2: Run to fail**
+- [x] **Step 2: Run to fail**
 
 Run: `npx vitest run packages/video/src/drawings/props.test.tsx`
 Expected: FAIL.
 
-- [ ] **Step 3: Implement `motion.ts` and `props.tsx`**
+- [x] **Step 3: Implement `motion.ts` and `props.tsx`**
 
-- [ ] **Step 4: Run to pass**
+- [x] **Step 4: Run to pass**
 
 Run: `npm test && npm run typecheck`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Message: `feat(video): 24 animated props`
 

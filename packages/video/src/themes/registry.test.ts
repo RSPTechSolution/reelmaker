@@ -54,6 +54,10 @@ describe('theme registry', () => {
     expect(resolveTheme('classic', brand).onBg).toEqual({ text: brand.text, accent: brand.accent });
   });
 
+  it('drawing lines stand out from the background', () => {
+    for (const t of all) expect(contrastRatio(t.ink.stroke, t.brand.bg), `${t.id} ink`).toBeGreaterThanOrEqual(3);
+  });
+
   it('busy backgrounds get a caption plate', () => {
     for (const id of ['comic', 'neon', 'paper', 'bollywood'] as const) expect(resolveTheme(id, brand).caption.plate, id).toBe(true);
   });

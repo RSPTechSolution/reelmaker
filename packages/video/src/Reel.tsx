@@ -1,12 +1,13 @@
 import React, { useMemo } from 'react';
 import { AbsoluteFill, Audio, Sequence, useCurrentFrame, useVideoConfig } from 'remotion';
-import { audioSettings, effectSettings, reelTheme, type Cue, type ReelProps } from '@reelmaker/shared';
+import { audioSettings, effectSettings, reelTheme, type Cue, type Pose, type ReelProps } from '@reelmaker/shared';
 import { BigNumber } from './blocks/BigNumber.tsx';
 import { Card } from './blocks/Card.tsx';
 import { List } from './blocks/List.tsx';
+import { Scene } from './blocks/Scene.tsx';
 import { Sticker } from './blocks/Sticker.tsx';
 import { Title } from './blocks/Title.tsx';
-import { activeCues, cueStartFrame } from './cues.ts';
+import { activeCues, cueStartFrame, isMorph, mainBefore } from './cues.ts';
 import { boil, EXPRESSION_POSE, poseAt } from './drawings/skeleton.ts';
 import { Stickman } from './drawings/Stickman.tsx';
 import {
@@ -37,7 +38,20 @@ const BLINK_EVERY = 105;
 const BLINK_FRAMES = 4;
 const SFX_CLIP_FRAMES = 75;
 
-function MainBlock({ cue, theme, start, skipEntrance }: { cue: Cue; theme: ResolvedTheme; start: number; skipEntrance?: boolean }) {
+function MainBlock({
+  cue,
+  theme,
+  start,
+  skipEntrance,
+  fromPose,
+}: {
+  cue: Cue;
+  theme: ResolvedTheme;
+  start: number;
+  skipEntrance?: boolean;
+  /** scene after scene: the stickman carries on from this pose */
+  fromPose?: Pose;
+}) {
   const common = { brand: theme.brand, theme, start, anim: cue.anim, skipEntrance };
   switch (cue.block.type) {
     case 'title':
@@ -48,6 +62,8 @@ function MainBlock({ cue, theme, start, skipEntrance }: { cue: Cue; theme: Resol
       return <BigNumber block={cue.block} {...common} />;
     case 'list':
       return <List block={cue.block} {...common} />;
+    case 'scene':
+      return <Scene block={cue.block} {...common} fromPose={fromPose} />;
     default:
       return null;
   }
@@ -122,7 +138,11 @@ export const Reel: React.FC<ReelProps> = (props) => {
   const mainStart = main ? cueStartFrame(main, words) : 0;
   const mainStarts = useMemo(() => reel.cues.filter(isMain).map((c) => cueStartFrame(c, words)), [reel.cues, words]);
   const sceneIndex = mainStarts.filter((s) => s <= frame).length;
-  const transitioning = !!(main && previous && fx.transition !== 'none');
+  // scene after scene: the stickman stays and changes pose; no slide/whip/zoom for it
+  const replaced = useMemo(() => (main ? mainBefore(reel.cues, words, main) : undefined), [reel.cues, words, main]);
+  const morph = isMorph(replaced, main);
+  const fromPose = morph && replaced?.block.type === 'scene' ? replaced.block.pose : undefined;
+  const transitioning = !!(main && previous && fx.transition !== 'none' && !morph);
   const trans = transitionStyles(fx.transition, (frame - mainStart) / TRANSITION_FRAMES);
 
   // emotion: shake on shocked lines, a small zoom punch on keywords
@@ -163,7 +183,7 @@ export const Reel: React.FC<ReelProps> = (props) => {
           ) : null}
           {main ? (
             <div key={`in-${main.id}`} style={{ ...centered, ...(transitioning ? trans.in : {}) }}>
-              <MainBlock cue={main} theme={theme} start={mainStart} skipEntrance={transitioning} />
+              <MainBlock cue={main} theme={theme} start={mainStart} skipEntrance={transitioning} fromPose={fromPose} />
             </div>
           ) : null}
         </div>

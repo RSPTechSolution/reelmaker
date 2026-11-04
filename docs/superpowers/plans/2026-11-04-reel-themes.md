@@ -408,6 +408,7 @@ Message: `feat(video): themed backgrounds, surfaces, captions and presenter`
 - Produces:
   - `isMorph(previous: Cue | undefined, main: Cue | undefined): boolean`, in `cues.ts`. True when both are `scene` blocks with a `pose`.
   - `MORPH_FRAMES = 8`.
+  - *(Added in build)* `PROP_STAGGER = 6`, `propDelay(block, k)` (objects wait one step for the stickman) and `mainBefore(cues, words, main)`: the main block `main` replaced. `previous` from `activeCues` only lasts the 10-frame overlap, so the morph uses `mainBefore` to keep `fromPose` for the whole scene.
   - `Scene: React.FC<BlockProps<SceneBlock> & { fromPose?: Pose }>`. Layout inside `BLOCK_SLOT`:
     - optional `text` heading on top, using `fitText` with `theme.charWidth`;
     - the stickman large, at left/centre, about 55 % of the slot height;
@@ -417,7 +418,7 @@ Message: `feat(video): themed backgrounds, surfaces, captions and presenter`
     - `theme.id === 'bold'` skips the drawings and renders `text` as giant type. A `bold` scene with no `text` renders nothing in the slot. The agent is told that `bold` scenes need `text` (Task 7).
   - Rule in `Reel.tsx`: when `isMorph(previous, main)` holds, render only the new `Scene` with `fromPose={previous.block.pose}`. The old block isn't drawn and no slide/whip/zoom is applied to the stickman. The props and text use the normal entrance.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 - `isMorph`: scene+scene with poses → true; scene → card → false; scene without pose → false; undefined → false.
 - `scene renders pose, props and text`: markup contains the stickman svg, 2 prop svgs and the text.
@@ -425,21 +426,21 @@ Message: `feat(video): themed backgrounds, surfaces, captions and presenter`
 - `bold scene shows text, not drawings`.
 - `sfxEvents treats a scene block as a main block`: a reel whose first main cue is a scene gives `tick` at its frame.
 
-- [ ] **Step 2: Run to fail**
+- [x] **Step 2: Run to fail**
 
 Run: `npx vitest run packages/video/src/cues.test.ts packages/video/src/blocks packages/video/src/effects.test.ts`
 Expected: FAIL.
 
-- [ ] **Step 3: Implement `Scene.tsx`, `isMorph`, the `Reel.tsx` branch and the `sfxEvents` change**
+- [x] **Step 3: Implement `Scene.tsx`, `isMorph`, the `Reel.tsx` branch and the `sfxEvents` change**
 
-- [ ] **Step 4: Run to pass, then check stills**
+- [x] **Step 4: Run to pass, then check stills**
 
 Run: `npm test && npm run typecheck`
 Expected: PASS.
 
 Render stills across a scene → scene change: the frame before it, +4 and +8. Confirm the stickman eases between the poses without jumping.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Message: `feat(video): scene block with acted-out drawings`
 

@@ -89,6 +89,39 @@ describe('sfxEvents', () => {
   });
 });
 
+describe('sfxEvents with scene blocks', () => {
+  it('sfxEvents treats a scene block as a main block', () => {
+    const ev = sfxEvents(
+      reel({
+        cues: [
+          { id: 's1', atWord: 0, block: { type: 'scene', pose: 'wave' } },
+          { id: 's2', atWord: 4, block: { type: 'scene', pose: 'thinking' } },
+        ],
+      }),
+      words,
+      TOTAL,
+    );
+    expect(ev.slice(0, 2).map((e) => [e.frame, e.sound])).toEqual([
+      [0, 'tick'],
+      [60, 'swipe'],
+    ]);
+  });
+
+  it('coins, rockets and ticks pop with a bubble when they appear', () => {
+    const ev = sfxEvents(
+      reel({ cues: [{ id: 's1', atWord: 4, block: { type: 'scene', pose: 'explain', props: ['star', 'coins'] } }] }),
+      words,
+      TOTAL,
+    );
+    // scene at frame 60 (tick), star at +6 (no sound), coins at +12 (bubble); the shocked line's
+    // boom at 75 is within 6 frames of the bubble, so it is dropped
+    expect(ev.filter((e) => e.frame < 100).map((e) => [e.frame, e.sound])).toEqual([
+      [60, 'tick'],
+      [72, 'bubble'],
+    ]);
+  });
+});
+
 describe('musicVolume', () => {
   const silent = new Array(TOTAL).fill(0);
   const talking = silent.map((_, f) => (f >= 100 && f < 200 ? 0.8 : 0));

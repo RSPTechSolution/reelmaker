@@ -1,4 +1,14 @@
-import { FPS, moodExpression, splitWords, wordFrame, type Cue, type Expression, type Line, type WordTiming } from '@reelmaker/shared';
+import {
+  FPS,
+  moodExpression,
+  splitWords,
+  wordFrame,
+  type Block,
+  type Cue,
+  type Expression,
+  type Line,
+  type WordTiming,
+} from '@reelmaker/shared';
 
 /** Words per second assumed for a cue whose word has no timing yet (before Captions sync). */
 const FALLBACK_WPS = 2.3;
@@ -15,6 +25,35 @@ export function cueEndFrame(cue: Cue, words: WordTiming[]): number {
   const w = words.find((x) => x.i === cue.untilWord);
   const endSec = w ? w.end : (cue.untilWord + 1) / FALLBACK_WPS;
   return Math.round(endSec * FPS);
+}
+
+/** Frames the stickman takes to move from the previous scene's pose into the new one. */
+export const MORPH_FRAMES = 8;
+/** Frames between objects appearing in a scene (the first waits one step for the stickman). */
+export const PROP_STAGGER = 6;
+
+/**
+ * A scene block with a pose replacing another one: the stickman stays and eases into the new pose
+ * instead of the usual slide/whip/zoom transition.
+ */
+export function isMorph(previous: Cue | undefined, main: Cue | undefined): boolean {
+  return previous?.block.type === 'scene' && !!previous.block.pose && main?.block.type === 'scene' && !!main.block.pose;
+}
+
+/** The main block that `main` replaced on screen (started before it and still showing), if any. */
+export function mainBefore(cues: Cue[], words: WordTiming[], main: Cue): Cue | undefined {
+  const start = cueStartFrame(main, words);
+  const before = cues
+    .map((cue, order) => ({ cue, order, start: cueStartFrame(cue, words) }))
+    .filter((t) => isMain(t.cue) && t.cue !== main && (t.start < start || (t.start === start && t.order < cues.indexOf(main))))
+    .sort((a, b) => a.start - b.start || a.order - b.order)
+    .at(-1);
+  return before && cueEndFrame(before.cue, words) > start ? before.cue : undefined;
+}
+
+/** Frames after a scene block starts before its k-th object appears. */
+export function propDelay(block: Extract<Block, { type: 'scene' }>, k: number): number {
+  return (k + (block.pose ? 1 : 0)) * PROP_STAGGER;
 }
 
 /** Frames the old and new main block overlap during a scene change (see effects.ts). */

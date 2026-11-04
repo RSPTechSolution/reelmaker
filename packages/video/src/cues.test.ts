@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Cue, WordTiming } from '@reelmaker/shared';
-import { activeCues, cueEndFrame, cueStartFrame } from './cues.ts';
+import { activeCues, cueEndFrame, cueStartFrame, isMorph, mainBefore, MORPH_FRAMES, propDelay } from './cues.ts';
 
 // 20 words, word k spoken from k*0.5 s to k*0.5+0.4 s  → word k starts at frame 15k
 const words: WordTiming[] = Array.from({ length: 20 }, (_, i) => ({
@@ -115,5 +115,42 @@ describe('activeCues', () => {
 
   it('falls back to ~2.3 words/s when a word has no timing', () => {
     expect(cueStartFrame(title('a', 23), [])).toBe(300);
+  });
+});
+
+describe('scene to scene', () => {
+  const scene = (id: string, block: Partial<Extract<Cue['block'], { type: 'scene' }>>): Cue => ({
+    id,
+    atWord: 0,
+    block: { type: 'scene', ...block },
+  });
+
+  it('isMorph: back-to-back scenes with poses keep the stickman', () => {
+    expect(MORPH_FRAMES).toBe(8);
+    expect(isMorph(scene('a', { pose: 'thinking' }), scene('b', { pose: 'idea', props: ['bulb'] }))).toBe(true);
+    expect(isMorph(scene('a', { pose: 'thinking' }), title('t', 0))).toBe(false);
+    expect(isMorph(title('t', 0), scene('b', { pose: 'idea' }))).toBe(false);
+    expect(isMorph(scene('a', { props: ['coins'] }), scene('b', { pose: 'idea' }))).toBe(false);
+    expect(isMorph(scene('a', { pose: 'wave' }), scene('b', { props: ['coins'] }))).toBe(false);
+    expect(isMorph(undefined, scene('b', { pose: 'idea' }))).toBe(false);
+    expect(isMorph(scene('a', { pose: 'wave' }), undefined)).toBe(false);
+  });
+
+  it('propDelay staggers props, after the stickman when there is one', () => {
+    expect([0, 1, 2].map((k) => propDelay({ type: 'scene', props: ['coins', 'clock', 'star'] }, k))).toEqual([0, 6, 12]);
+    expect([0, 1].map((k) => propDelay({ type: 'scene', pose: 'explain', props: ['coins', 'clock'] }, k))).toEqual([6, 12]);
+  });
+
+  it('mainBefore: the main block a cue replaced, if it was still showing', () => {
+    const a = scene('a', { pose: 'wave' });
+    const b = { ...scene('b', { pose: 'idea' }), atWord: 4 };
+    const gone = { ...scene('g', { pose: 'sad' }), atWord: 8, untilWord: 9 };
+    const c = { ...scene('c', { pose: 'shrug' }), atWord: 12 };
+    const s = sticker('s', 6);
+    const cues = [b, s, a, gone, c];
+    expect(mainBefore(cues, words, b)?.id).toBe('a');
+    expect(mainBefore(cues, words, a)).toBeUndefined();
+    expect(mainBefore(cues, words, gone)?.id).toBe('b');
+    expect(mainBefore(cues, words, c)).toBeUndefined(); // g ended at word 9, before c started
   });
 });

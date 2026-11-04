@@ -12,7 +12,7 @@ import {
   type WordTiming,
 } from '@reelmaker/shared';
 import { countFrom } from './blocks/BigNumber.tsx';
-import { cueStartFrame } from './cues.ts';
+import { cueStartFrame, propDelay } from './cues.ts';
 import { END_CARD_FRAMES } from './EndCard.tsx';
 
 export const TRANSITION_FRAMES = 10;
@@ -20,7 +20,9 @@ const FALLBACK_WPS = 2.3;
 const MIN_SFX_GAP = 6;
 const COUNT_FRAMES = 24;
 
-const isMain = (t: string) => t === 'title' || t === 'card' || t === 'bigNumber' || t === 'list';
+const isMain = (t: string) => t === 'title' || t === 'card' || t === 'bigNumber' || t === 'list' || t === 'scene';
+/** Objects whose entrance gets a soft bubble pop. */
+const POPPING_PROPS = new Set(['coins', 'rocket', 'check']);
 const norm = (w: string) => w.normalize('NFC').toLowerCase().replace(/[\p{P}\p{S}]/gu, '');
 
 /** Frame each script line starts at (its first word). */
@@ -39,7 +41,7 @@ export type SfxEvent = { frame: number; sound: SfxName; volume: number };
 // swipe plays on every scene change, so it sits a little lower than the rest
 const LEVEL: Record<SfxName, number> = { swipe: 0.6, tick: 0.8, bubble: 0.8, ding: 0.7, boom: 1, riser: 0.6 };
 
-/** Which sound effect plays when: tick on the first title, swipe on scene changes, bubble on stickers, ding when a number lands, boom on shocked lines. */
+/** Which sound effect plays when: tick on the first title, swipe on scene changes, bubble on stickers and popping objects, ding when a number lands, boom on shocked lines. */
 export function sfxEvents(reel: Reel, words: WordTiming[], total: number): SfxEvent[] {
   const audio = audioSettings(reel);
   if (!audio.sfx) return [];
@@ -53,6 +55,12 @@ export function sfxEvents(reel: Reel, words: WordTiming[], total: number): SfxEv
       if (c.block.type === 'bigNumber') {
         const counts = countFrom(c.block.to) !== c.block.to;
         raw.push({ frame: start + (counts ? COUNT_FRAMES : 4), sound: 'ding' });
+      }
+      if (c.block.type === 'scene') {
+        const scene = c.block;
+        (scene.props ?? []).forEach((p, k) => {
+          if (POPPING_PROPS.has(p)) raw.push({ frame: start + propDelay(scene, k), sound: 'bubble' });
+        });
       }
     } else if (c.block.type === 'sticker') {
       raw.push({ frame: start, sound: 'bubble' });
